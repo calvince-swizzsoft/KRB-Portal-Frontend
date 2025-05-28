@@ -13,7 +13,7 @@ import {
 } from "react-icons/fi";
 import { RiDashboardHorizontalLine } from "react-icons/ri";
 import "../css/Navbar.css";
-import Logo from "../img/KRBlogo.png";
+import Logo from "../img/KRBLogo.png";
 import { toast, ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 

@@ -2,7 +2,7 @@ import React, { useState, useEffect } from "react";
 import { toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 import "../css/OnlineLoanApplication.css";
-import KRBLogo from "../img/KRBlogo.png";
+import KRBLogo from "../img/KRBLogo.png";
 
 function OnlineLoanApplication() {
   const [isModalOpen, setIsModalOpen] = useState(false);

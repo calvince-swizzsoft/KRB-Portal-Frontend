@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { toast } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 import { FaEye, FaEyeSlash } from 'react-icons/fa';
-import KRBLogo from '../img/KRBlogo.png';
+import KRBLogo from '../img/KRBLogo.png';
 import '../css/ChangePassword.css';
 
 function ChangePassword() {

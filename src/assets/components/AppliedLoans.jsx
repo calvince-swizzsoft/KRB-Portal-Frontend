@@ -1,6 +1,6 @@
 import { Link } from "react-router-dom";
 import React, { useState, useEffect } from "react";
-import KRBLogo from "../img/KRBlogo.png";
+import KRBLogo from "../img/KRBLogo.png";
 import LoanDetailsModal from "./LoanDetailsModal.jsx";
 import { toast, ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";

@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import KRBLogo from "../img/KRBlogo.png";
+import KRBLogo from "../img/KRBLogo.png";
 import { useNavigate } from "react-router-dom";
 import "../css/MemberProfile.css";
 

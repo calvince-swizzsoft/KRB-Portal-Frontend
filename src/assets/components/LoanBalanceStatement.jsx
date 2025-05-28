@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import banner from "../img/KRBlogo.png";
+import banner from "../img/KRBLogo.png";
 import "../css/GurantorStatement.css";
 
 function LoanBalanceStatement() {
