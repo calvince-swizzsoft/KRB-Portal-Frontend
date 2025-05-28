@@ -1,0 +1,161 @@
+/* Base Styles */
+.statement-container {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 1rem;
+  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+}
+
+.statement-card {
+  background-color: white;
+  border-radius: 10px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+  padding: 1.5rem;
+  margin-bottom: 2rem;
+}
+
+.statement-header {
+  text-align: center;
+  margin-bottom: 1.5rem;
+}
+
+.logo-img {
+  max-height: 80px;
+  margin-bottom: 0.5rem;
+}
+
+.sacco-name {
+  display: block;
+  color: #196019;
+  font-size: 2rem;
+  font-weight: 500;
+}
+
+.statement-title {
+  color: #333;
+  text-align: center;
+  margin-bottom: 1.5rem;
+  padding-bottom: 0.5rem;
+ 
+}
+
+.statement-content {
+  min-height: 300px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+}
+
+/* PDF Viewer */
+.pdf-viewer {
+  width: 100%;
+  height: 600px;
+  border: 1px solid #ddd;
+  border-radius: 5px;
+}
+
+/* Mobile Specific Styles */
+.mobile-pdf-container {
+  text-align: center;
+  padding: 1rem;
+}
+
+.mobile-message {
+  color: #555;
+  margin-bottom: 1.5rem;
+  font-size: 1rem;
+}
+
+.mobile-buttons {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  width: 100%;
+  max-width: 300px;
+  margin: 0 auto;
+}
+
+/* Buttons */
+.action-buttons, .mobile-buttons {
+  display: flex;
+  gap: 1rem;
+  justify-content: center;
+  margin-top: 1.5rem;
+  flex-wrap: wrap;
+}
+
+.download-btn, .view-btn {
+  padding: 0.75rem 1.5rem;
+  border-radius: 5px;
+  text-decoration: none;
+  font-weight: 500;
+  transition: all 0.2s;
+  text-align: center;
+}
+
+.download-btn {
+  background-color: #196019;
+  color: white;
+  border: 1px solid #196019;
+}
+
+.download-btn:hover {
+  background-color: #134913;
+}
+
+.view-btn {
+  background-color: white;
+  color: #196019;
+  border: 1px solid #196019;
+}
+
+.view-btn:hover {
+  background-color: #f0f7f0;
+}
+
+/* Loading and Error States */
+.loading-indicator {
+  text-align: center;
+}
+
+.spinner {
+  border: 4px solid rgba(25, 96, 25, 0.1);
+  border-radius: 50%;
+  border-top: 4px solid #196019;
+  width: 40px;
+  height: 40px;
+  animation: spin 1s linear infinite;
+  margin: 0 auto 1rem;
+}
+
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
+.error-message {
+  color: #e74c3c;
+  text-align: center;
+  font-weight: 500;
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+  .statement-container {
+    padding: 0.5rem;
+  }
+  
+  .statement-card {
+    padding: 1rem;
+  }
+  
+  .action-buttons {
+    flex-direction: column;
+    align-items: center;
+  }
+  
+  .download-btn, .view-btn {
+    width: 100%;
+  }
+}

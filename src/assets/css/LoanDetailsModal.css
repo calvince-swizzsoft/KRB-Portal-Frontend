@@ -1,0 +1,725 @@
+/* Modal Overlay */
+.loan-modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: rgba(0, 0, 0, 0.5);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 1000;
+  animation: fadeIn 0.3s ease-out;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+/* Modal Container */
+.loan-modal-container {
+  background-color: white;
+  border-radius: 10px;
+  width: 90%;
+  max-width: 700px;
+  max-height: 90vh;
+  overflow-y: auto;
+  box-shadow: 0 5px 20px rgba(0, 0, 0, 0.2);
+  animation: slideUp 0.3s ease-out;
+}
+
+@keyframes slideUp {
+  from {
+    transform: translateY(20px);
+    opacity: 0;
+  }
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}
+
+/* Modal Header */
+.loan-modal-header {
+  display: flex;
+  justify-content: space-between;
+  gap: 150px;
+  align-items: center;
+  padding: 20px;
+  border-bottom: 1px solid #eee;
+}
+
+.loan-modal-header h2 {
+  margin: 0;
+  font-size: 1.5rem;
+  color: #2c3e50;
+}
+
+.loan-modal-close {
+  background: none;
+  border: none;
+  font-size: 1.7rem;
+  cursor: pointer;
+  color: #7f8c8d;
+  transition: color 0.2s;
+  padding: 0;
+}
+
+.loan-modal-close:hover {
+  color: #e74c3c;
+}
+
+/* Tabs */
+.loan-modal-tabs {
+  display: flex;
+  border-bottom: 1px solid #eee;
+}
+
+.loan-modal-tab {
+  flex: 1;
+  padding: 12px;
+  background: none;
+  border: none;
+  cursor: pointer;
+  font-size: 1rem;
+  font-weight: 500;
+  color: #7f8c8d;
+  transition: all 0.2s;
+  border-bottom: 3px solid transparent;
+}
+
+.loan-modal-tab:hover {
+  color: #196019;
+  background-color: #f8f9fa;
+}
+
+.loan-modal-tab.active {
+  color: #196019;
+  border-bottom-color: #196019;
+}
+
+/* Modal Content */
+.loan-modal-content {
+  padding: 20px;
+}
+
+.loan-modal-footer {
+    display: flex;
+    width: 100%;
+    padding: 20px;
+}
+.close-modal-btn{
+    background-color: rgb(221, 31, 31);
+    margin-left: auto;
+}
+
+/* Loan Details Section */
+.loan-details-section {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+  gap: 15px;
+}
+
+.loan-detail {
+  margin-bottom: 15px;
+}
+.remove-btn{
+    padding: 10px;
+    background-color: rgb(216, 18, 18);
+    border-radius: 7px;
+}
+
+.loan-detail label {
+  display: block;
+  font-weight: 500;
+  color: #7f8c8d;
+  margin-bottom: 5px;
+  font-size: 0.9rem;
+}
+
+.loan-value {
+  padding: 10px;
+  background-color: #f8f9fa;
+  border-radius: 5px;
+  border-left: 3px solid #3498db;
+}
+
+.loan-status {
+  display: inline-block;
+  padding: 5px 10px;
+  border-radius: 20px;
+  font-size: 0.8rem;
+  font-weight: 500;
+}
+
+.loan-status.pending {
+  background-color: #fff3cd;
+  color: #856404;
+}
+
+.loan-status.approved {
+  background-color: #d4edda;
+  color: #155724;
+}
+
+.loan-status.rejected {
+  background-color: #f8d7da;
+  color: #721c24;
+}
+
+/* Salary Section */
+.salary-section {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+  gap: 15px;
+}
+
+.salary-detail {
+  margin-bottom: 15px;
+}
+
+.salary-detail label {
+  display: block;
+  font-weight: 500;
+  color: #7f8c8d;
+  margin-bottom: 5px;
+  font-size: 0.9rem;
+}
+
+.salary-detail input {
+  width: 100%;
+  padding: 10px;
+  border: 1px solid #ddd;
+  border-radius: 5px;
+  background-color: #f8f9fa;
+  color: #333;
+}
+
+.salary-note {
+  grid-column: 1 / -1;
+  font-size: 0.85rem;
+  color: #7f8c8d;
+  margin-top: 10px;
+  padding: 10px;
+  background-color: #f8f9fa;
+  border-radius: 5px;
+}
+
+.guarantors-list table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.guarantors-list th,
+.guarantors-list td {
+  padding: 8px;
+  text-align: left;
+  
+}
+
+.status-badge {
+  padding: 4px 8px;
+  border-radius: 4px;
+  font-weight: bold;
+}
+
+.status-badge.approved {
+  background-color: #d4edda;
+  color: #155724;
+}
+.status-badge.pending {
+  background-color: #fff3cd;
+  color: #856404;
+}
+
+/* Mobile styles */
+@media screen and (max-width: 768px) {
+  .guarantors-list table,
+  .guarantors-list thead,
+  .guarantors-list tbody,
+  .guarantors-list th,
+  .guarantors-list td,
+  .guarantors-list tr {
+    display: block;
+    width: 100%;
+  }
+
+  .guarantors-list thead {
+    display: none; /* Hide table headers */
+  }
+
+  .guarantors-list tr {
+    margin-bottom: 1rem;
+    background-color: #f9f9f9;
+    padding: 10px;
+    
+  }
+
+  .guarantors-list td {
+    text-align: right;
+    padding-left: 50%;
+    position: relative;
+  }
+
+  .guarantors-list td::before {
+    content: attr(data-label);
+    position: absolute;
+    left: 10px;
+    text-align: left;
+    font-weight: bold;
+    color: #555;
+  }
+
+  .add-guarantor-form .form-group {
+    display: flex;
+    flex-direction: column;
+    margin-bottom: 1rem;
+  }
+
+  .form-actions {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+  }
+}
+
+
+@media (max-width: 400px) {
+  .loan-modal-tabs {
+    display: flex;
+    flex-direction: column;
+    border-bottom: 1px solid #eee;
+  }
+  
+}
+/* Submit Loan Section */
+.submit-loan-section {
+  padding: 20px;
+}
+
+.loan-summary-card {
+  background-color: #fff;
+  border-radius: 8px;
+  padding: 20px;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
+}
+
+.loan-summary-card h3 {
+  margin-top: 0;
+  color: #2c3e50;
+  border-bottom: 1px solid #eee;
+  padding-bottom: 10px;
+  margin-bottom: 20px;
+}
+
+.summary-details {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 12px;
+  margin-bottom: 20px;
+}
+
+.summary-row {
+  display: flex;
+  justify-content: space-between;
+  padding: 8px 0;
+  border-bottom: 1px dashed #eee;
+}
+
+.summary-label {
+  font-weight: 500;
+  color: #7f8c8d;
+}
+
+.summary-value {
+  font-weight: 600;
+  color: #2c3e50;
+}
+
+/* Submit Button */
+.submit-loan-button {
+  width: 100%;
+  padding: 12px;
+  background-color: #196019;
+  color: white;
+  border: none;
+  border-radius: 10px;
+  font-size: 1rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background-color 0.2s;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+}
+
+.submit-loan-button:hover {
+  background-color: #219653;
+}
+
+.submit-loan-button:disabled {
+  background-color: #95a5a6;
+  cursor: not-allowed;
+}
+
+
+.spinner {
+  width: 18px;
+  height: 18px;
+  border: 3px solid rgba(255, 255, 255, 0.3);
+  border-radius: 50%;
+  border-top-color: white;
+  animation: spin 1s ease-in-out infinite;
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+.guarantors-list-container {
+  width: 100%;
+  margin: 20px 0;
+}
+
+/* Default table styles (for larger screens) */
+.guarantors-list-container table {
+  width: 100%;
+  border-collapse: collapse;
+  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  border-radius: 8px;
+  overflow: hidden;
+}
+
+.guarantors-list-container thead {
+  background-color: #2c3e50;
+  color: white;
+}
+
+.guarantors-list-container th {
+  padding: 12px 15px;
+  text-align: left;
+  font-weight: 600;
+  text-transform: uppercase;
+  font-size: 0.8rem;
+  letter-spacing: 0.5px;
+}
+
+.guarantors-list-container tbody tr {
+  border-bottom: 1px solid #e0e0e0;
+  transition: background-color 0.2s ease;
+}
+
+.guarantors-list-container tbody tr:nth-child(even) {
+  background-color: #f8f9fa;
+}
+
+.guarantors-list-container tbody tr:hover {
+  background-color: #f1f5f9;
+}
+
+.guarantors-list-container td {
+  padding: 12px 15px;
+  color: #333;
+  font-size: 0.9rem;
+}
+
+.guarantors-list-container .remove-btn {
+  background-color: #e74c3c;
+  color: white;
+  border: none;
+  padding: 6px 12px;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 0.8rem;
+  transition: all 0.2s ease;
+}
+
+.guarantors-list-container .remove-btn:hover:not(:disabled) {
+  background-color: #c0392b;
+}
+
+.guarantors-list-container .remove-btn:disabled {
+  background-color: #95a5a6;
+  cursor: not-allowed;
+  opacity: 0.7;
+}
+
+/* Status styling */
+.guarantors-list-container td span {
+  padding: 4px 8px;
+  border-radius: 12px;
+  font-size: 0.8rem;
+  font-weight: 500;
+}
+
+.guarantors-list-container td span[data-status="Approved"] {
+  background-color: #2ecc71;
+  color: white;
+}
+
+.guarantors-list-container td span[data-status="Pending"] {
+  background-color: #f39c12;
+  color: white;
+}
+
+.guarantors-list-container td span[data-status="Rejected"] {
+  background-color: #e74c3c;
+  color: white;
+}
+
+/* Mobile styles - stacked cards */
+@media (max-width: 768px) {
+  .guarantors-list-container table {
+    display: block;
+    box-shadow: none;
+    border-radius: 0;
+  }
+  
+  .guarantors-list-container thead {
+    display: none;
+  }
+  
+  .guarantors-list-container tbody,
+  .guarantors-list-container tr,
+  .guarantors-list-container td {
+    display: block;
+    width: 100%;
+  }
+  
+  .guarantors-list-container tr {
+    margin-bottom: 20px;
+    padding: 15px;
+    background: white;
+    box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+    border-radius: 8px;
+    position: relative;
+  }
+  
+  .guarantors-list-container td {
+    padding: 8px 10px;
+    border: none;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-size: 0.9rem;
+  }
+  
+  .guarantors-list-container td::before {
+    content: attr(data-label);
+    font-weight: 600;
+    text-transform: uppercase;
+    color: #555;
+    font-size: 0.75rem;
+    margin-right: 10px;
+    flex: 1;
+  }
+  
+  .guarantors-list-container td > * {
+    flex: 2;
+    text-align: right;
+  }
+  
+  .guarantors-list-container .remove-btn {
+    position: absolute;
+    bottom: 10px;
+    right: 10px;
+    padding: 6px 12px;
+  }
+  
+}
+
+/* Very small screens adjustments */
+@media (max-width: 480px) {
+  .guarantors-list-container td {
+    font-size: 0.85rem;
+  }
+  
+  .guarantors-list-container td::before {
+    font-size: 0.7rem;
+  }
+  
+  .guarantors-list-container .remove-btn {
+    padding: 5px 10px;
+    font-size: 0.75rem;
+  }
+}
+
+/* Add Guarantor Section */
+.add-guarantor-section {
+  margin-top: 1.5rem;
+  padding: 1rem;
+  border-radius: 0.75rem;
+  border: 1px solid #e5e7eb;
+  background-color: white;
+  width: 100%;
+  max-width: 28rem;
+  box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+}
+
+/* Form Container */
+.guarantor-form {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+/* Input Fields */
+.guarantor-input {
+  padding: 0.5rem 1rem;
+  border: 1px solid #d1d5db;
+  border-radius: 0.375rem;
+  outline: none;
+}
+
+.guarantor-input:focus {
+  border-color: #ef4444;
+  box-shadow: 0 0 0 2px rgba(239, 68, 68, 0.2);
+}
+
+/* Action Buttons Container */
+.guarantor-actions {
+  display: flex;
+  gap: 1rem;
+}
+
+/* Submit Button */
+.guarantor-submit-btn {
+  padding: 0.5rem 1rem;
+  border-radius: 0.375rem;
+  color: white;
+  background-color: #ef4444;
+  border: none;
+  cursor: pointer;
+}
+
+.guarantor-submit-btn:not(.disabled):hover {
+  background-color: #dc2626;
+}
+
+.guarantor-submit-btn.disabled {
+  background-color: #9ca3af;
+  cursor: not-allowed;
+}
+
+/* Cancel Button */
+.guarantor-cancel-btn {
+  padding: 0.5rem 1rem;
+  border-radius: 0.375rem;
+  color: #374151;
+  background-color: transparent;
+  border: 1px solid #d1d5db;
+  cursor: pointer;
+}
+
+.guarantor-cancel-btn:hover {
+  background-color: #f3f4f6;
+}
+
+/* Add Guarantor Button */
+.add-guarantor-btn {
+  padding: 0.5rem 1rem;
+  background-color: #ef4444;
+  color: white;
+  border-radius: 0.375rem;
+  border: none;
+  cursor: pointer;
+}
+
+.add-guarantor-btn:hover {
+  background-color: #dc2626;
+}
+
+/* Submit Loan Container */
+.submit-loan-container {
+  padding: 1.5rem;
+  background-color: #f8f9fa;
+  border-radius: 8px;
+  margin-top: 1rem;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+}
+.submit-loan-container small{
+  font-size: 1.3rem;
+  font-weight: bold;
+  padding-left: 30%;
+  
+}
+
+/* Loan Info Fields */
+.loan-info-fields {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  margin-top: 1.5rem;
+  margin-top: 0.875rem;
+}
+
+.loan-info-input {
+  width: 100%;
+  padding: 0.75rem 1rem;
+  border: 1px solid #ced4da;
+  border-radius: 4px;
+  background-color: #f1f3f5;
+  color: #495057;
+  font-size: 0.9rem;
+}
+
+.loan-info-input:focus {
+  outline: none;
+  border-color: #80bdff;
+  box-shadow: 0 0 0 0.2rem rgba(0, 123, 255, 0.25);
+}
+
+/* Submit Button */
+.submit-loan-btn {
+  width: 100%;
+  padding: 0.75rem;
+  background-color: #28a745;
+  color: white;
+  border: none;
+  border-radius: 4px;
+  font-size: 0.8rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background-color 0.2s ease;
+  margin-top: 10px;
+}
+
+.submit-loan-btn:hover {
+  background-color: #218838;
+}
+
+.submit-loan-btn:active {
+  background-color: #1e7e34;
+}
+
+.submit-loan-btn:disabled {
+  background-color: #6c757d;
+  cursor: not-allowed;
+}
+
+/* Responsive Design */
+@media (min-width: 768px) {
+  .loan-info-fields {
+    flex-direction: row;
+  }
+  
+  .loan-info-input {
+    width: auto;
+    flex-grow: 1;
+  }
+  
+  .submit-loan-btn {
+    width: auto;
+    color: #196019;
+    color: white;
+    padding: 0.75rem 1.5rem;
+  }
+}

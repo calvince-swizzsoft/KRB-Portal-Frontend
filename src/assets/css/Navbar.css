@@ -1,0 +1,435 @@
+.navbar-container {
+  width: 256px;
+  background: #196019;
+  color: white;
+  position: fixed;
+  z-index: 20;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+}
+
+.navbar-container.hide {
+  display: none;
+}
+
+.navbar-header {
+  padding: 16px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  border-bottom: 1px solid #047857;
+}
+
+.navbar-brand {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.logo {
+  height: 32px;
+}
+
+.brand-text {
+  font-weight: bold;
+  font-size: 1.125rem;
+}
+
+
+
+.navbar-user {
+  display: flex;
+  align-items: center;
+  gap: 20px;
+  padding: 20px;
+  border-bottom: 1px solid #047857;
+}
+
+.user-image-wrapper {
+  position: relative;
+}
+
+.user-image {
+  height: 40px;
+  width: 40px;
+  border-radius: 9999px;
+  border: 2px solid white;
+}
+
+.user-status {
+  position: absolute;
+  bottom: 0;
+  right: 0;
+  height: 12px;
+  width: 12px;
+  background-color: #34d399;
+  border-radius: 50%;
+  border: 2px solid #065f46;
+}
+
+.user-info .user-name {
+  font-weight: 500;
+}
+.user-info p{
+  margin: 5px;
+}
+
+.user-info .user-id {
+  font-size: 0.75rem;
+  color: #a7f3d0;
+}
+
+.navbar-menu {
+  padding: 8px;
+}
+
+.menu-group {
+  margin-bottom: 8px;
+}
+
+.menu-button {
+  width: 100%;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 12px;
+  border: none;
+  background: none;
+  color: inherit;
+  cursor: pointer;
+}
+
+.menu-label {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.submenu {
+  padding-left: 16px;
+  border-left: 2px solid #047857;
+}
+.menu-link{
+  font-weight: bold;
+  letter-spacing: 1px;
+}
+
+.submenu-link {
+  display: block;
+  padding: 8px;
+  text-decoration: none;
+  color: inherit;
+}
+
+.submenu-link:hover,
+.menu-button:hover,
+.footer-link:hover {
+  background-color: #fcba03;
+  color: white;
+}
+
+/* Navbar Footer Styles */
+.navbar-footer {
+  padding: 1.5rem;
+  border-top: 1px solid rgba(255, 255, 255, 0.1);
+  margin-top: auto;
+}
+
+.user-profile {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1rem;
+  margin-bottom: 0;
+}
+
+.user-avatar {
+  position: relative;
+}
+
+.avatar-image {
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
+  object-fit: cover;
+  border: 2px solid #166534;
+}
+
+.online-status {
+  position: absolute;
+  bottom: 0;
+  right: 0;
+  width: 12px;
+  height: 12px;
+  background-color: #10b981;
+  border-radius: 50%;
+  border: 2px solid #1a2e05;
+}
+
+.user-details {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+.user-details p{
+  padding: 5px;
+  margin: 5px;
+  width: auto;
+}
+
+.username {
+  font-weight: 600;
+  color: white;
+  margin-bottom: 0.25rem;
+  padding-top: 30px;
+  font-size: 1.5rem;
+}
+
+.member-id {
+  color: rgba(255, 255, 255, 0.7);
+  font-size: 0.85rem;
+  text-align: center;
+}
+
+.footer-actions {
+  display: flex;
+  flex-direction: row;
+  gap: 0.75rem;
+}
+
+.action-button {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.75rem ;
+  border-radius: 8px;
+  font-size: 0.75rem;
+  transition: all 0.2s ease;
+  text-decoration: none;
+  border: none;
+  cursor: pointer;
+  background: transparent;
+  width: 100%;
+  color: rgba(255, 255, 255, 0.8);
+}
+
+.action-button:hover {
+  background: rgba(255, 255, 255, 0.1);
+  color: white;
+}
+
+.action-icon {
+  font-size: 1.1rem;
+}
+
+.help-button:hover {
+  color: #3b82f6;
+}
+
+.logout-button:hover {
+  color: #ef4444;
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+  .navbar-footer {
+    padding: 1rem;
+  }
+  
+  .avatar-image {
+    width: 40px;
+    height: 40px;
+  }
+  
+  .action-button {
+    padding: 0.6rem;
+    font-size: 0.9rem;
+  }
+}
+
+.footer-link {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: none;
+  border: none;
+  color: inherit;
+  padding: 8px;
+  width: 100%;
+  cursor: pointer;
+}
+.close-btn {
+  background: none;
+  border: none;
+  color: white;
+  cursor: pointer;
+  padding: 3px;
+  width: 30px;
+}
+/* Add to Navbar.css */
+.menu-link {
+  display: flex;
+  align-items: center;
+  padding: 12px 16px;
+  color: #fff;
+  text-decoration: none;
+  transition: background-color 0.2s;
+  border-radius: 20px;
+}
+
+.menu-link:hover {
+  background-color: #fcba03;
+  color: white;
+}
+
+.menu-link .menu-label {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+/* Navbar Footer Styles */
+.navbar-footer {
+  padding: 1.5rem 2rem;
+  border-top: 1px solid rgba(255, 255, 255, 0.1);
+  margin-top: auto;
+  background-color: transparent; /* subtle dark green background */
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1.5rem;
+}
+
+/* User Profile Section */
+.user-profile {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  gap: 1rem;
+  width: 100%;
+  max-width: 320px;
+}
+
+.user-avatar {
+  position: relative;
+  flex-shrink: 0;
+}
+
+.avatar-image {
+  width: 56px;
+  height: 56px;
+  border-radius: 50%;
+  object-fit: cover;
+  border: 2.5px solid #166534;
+  box-shadow: 0 0 5px rgba(0,0,0,0.3);
+}
+
+.online-status {
+  position: absolute;
+  bottom: 3px;
+  right: 3px;
+  width: 14px;
+  height: 14px;
+  background-color: #10b981;
+  border-radius: 50%;
+  border: 2px solid #1a2e05;
+  box-shadow: 0 0 5px #10b981;
+}
+
+.user-details {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  overflow: hidden;
+}
+
+.user-details p {
+  margin: 0;
+  padding: 0;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+  overflow: hidden;
+}
+
+.username {
+  font-weight: 700;
+  color: #ffffff;
+  font-size: 1rem;
+  line-height: 1.2;
+}
+
+.member-id {
+  color: rgba(255, 255, 255, 0.7);
+  font-size: 0.85rem;
+  text-align: left;
+}
+
+/* Footer Actions */
+.footer-actions {
+  display: flex;
+  flex-direction: row;
+  gap: 1rem;
+  width: 100%;
+  max-width: 320px;
+}
+
+.action-button {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  padding: 0.6rem 1rem;
+  border-radius: 8px;
+  font-size: 0.9rem;
+  font-weight: 600;
+  transition: all 0.2s ease;
+  text-decoration: none;
+  border: none;
+  cursor: pointer;
+  background: transparent;
+  width: 50%;
+  color: rgba(255, 255, 255, 0.85);
+  user-select: none;
+}
+
+.action-button:hover {
+  background: rgba(255, 255, 255, 0.1);
+  color: white;
+  box-shadow: 0 0 8px rgba(255,255,255,0.3);
+}
+
+.action-icon {
+  font-size: 1.2rem;
+  line-height: 1;
+}
+
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+  .navbar-footer {
+    padding: 0.5rem 0.7rem;
+  }
+
+  .user-avatar .avatar-image {
+    width: 48px;
+    height: 48px;
+  }
+
+  .footer-actions {
+    max-width: 100%;
+    gap: 0.75rem;
+  }
+
+ 
+
+  .user-profile {
+    max-width: 100%;
+    gap: 0.75rem;
+  }
+
+  .username {
+    font-size: 1.1rem;
+  }
+}

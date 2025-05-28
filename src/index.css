@@ -1,0 +1,45 @@
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+/* Keeping the background animation for the whole app */
+#root {
+  height: 100vh;
+  display: flex;
+  align-items: center; /* Centered by default */
+  justify-content: center; /* Centered by default */
+  background: linear-gradient(
+    -45deg,
+    #196019,    
+    #2a7a24,    
+    #3a9430,    
+    #5fa84d,    
+    #ffec80     
+  );
+  background-size: 400% 400%;
+  animation: gradientFlow 10s ease infinite;
+  width: 100%;
+}
+
+@keyframes gradientFlow {
+  0% {
+    background-position: 0% 50%;
+  }
+  50% {
+    background-position: 100% 50%;
+  }
+  100% {
+    background-position: 0% 50%;
+  }
+}
+
+/* New class to remove centering for Layout */
+.layoutContainer {
+  display: block; /* Override flexbox */
+  height: 100%; /* Ensure it takes full height */
+  width: 100%; /* Ensure it takes full width */
+  align-items: initial; /* Remove any centering */
+  justify-content: initial; /* Remove any centering */
+}
