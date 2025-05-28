@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { toast } from "react-toastify";
+import { toast, ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 import "../css/OnlineLoanApplication.css";
 import KRBLogo from "../img/KRBLogo.png";
@@ -13,10 +13,15 @@ function OnlineLoanApplication() {
   const [searchTerm, setSearchTerm] = useState("");
   const [filterTerm, setFilterTerm] = useState("all");
   const [isMobile, setIsMobile] = useState(false);
-  const [LoanType, setLoanType] = useState("");
+  const [loanType, setLoanType] = useState("");
   const [loanAmount, setLoanAmount] = useState("");
   const [loanPurpose, setLoanPurpose] = useState("");
   const [repaymentPeriod, setRepaymentPeriod] = useState("");
+  const [submitStatus, setSubmitStatus] = useState({
+    message: "",
+    isError: false,
+    isSuccess: false,
+  });
 
   const memberNo = localStorage.getItem("memberNo");
 
@@ -134,44 +139,71 @@ function OnlineLoanApplication() {
     return true;
   };
 
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-    if (!validateInputs()) return;
+ const handleSubmit = async (e) => {
+  e.preventDefault();
+  setSubmitStatus({ message: '', isError: false, isSuccess: false });
+  
+  if (!validateInputs()) return;
 
-    const payload = {
-      bosa_no: memberNo,
-      loan_type: loanType,
-      loan_amount: parseFloat(loanAmount),
-      loan_purpose: loanPurpose,
-      repayment_period: parseInt(repaymentPeriod),
-    };
-
-    try {
-      const response = await fetch(
-        `${import.meta.env.VITE_API_BASE_URL}/api/apply-loan/`,
-        {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(payload),
-        }
-      );
-
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(
-          errorData.message || "Failed to submit loan application"
-        );
-      }
-
-      toast.success("Loan application submitted successfully!");
-      closeModal();
-    } catch (error) {
-      toast.error(error.message);
-    }
+  const payload = {
+    bosa_no: memberNo,
+    loan_type: parseInt(selectedLoan.loan_code),
+    loan_amount: parseFloat(loanAmount),
+    loan_purpose: loanPurpose,
+    repayment_period: parseInt(repaymentPeriod),
   };
 
+  try {
+    const response = await fetch(
+      `${import.meta.env.VITE_API_BASE_URL}/api/apply-loan/`,
+      {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload),
+      }
+    );
+
+    if (!response.ok) {
+      const errorData = await response.json();
+      setSubmitStatus({
+        message: errorData.message || "Failed to submit loan application",
+        isError: true,
+        isSuccess: false
+      });
+      return;
+    }
+
+    setSubmitStatus({
+      message: "Loan application submitted successfully!",
+      isError: false,
+      isSuccess: true
+    });
+    
+    setTimeout(() => {
+      closeModal();
+    }, 2000);
+    
+  } catch (error) {
+    setSubmitStatus({
+      message: error.message || "An unexpected error occurred",
+      isError: true,
+      isSuccess: false
+    });
+  }
+};
   return (
     <div className="onlineloanapplication-maincontainer">
+      <ToastContainer
+        position="top-right"
+        autoClose={5000}
+        hideProgressBar={false}
+        newestOnTop={false}
+        closeOnClick
+        rtl={false}
+        pauseOnFocusLoss
+        draggable
+        pauseOnHover
+      />
       <div className="maincontainer">
         <div className="header-section">
           <div className="logo-container">
@@ -346,6 +378,15 @@ function OnlineLoanApplication() {
                     rows="4"
                   ></textarea>
                 </div>
+                {submitStatus.message && (
+                  <div
+                    className={`form-message ${
+                      submitStatus.isError ? "error" : "success"
+                    }`}
+                  >
+                    {submitStatus.message}
+                  </div>
+                )}
 
                 <div className="form-actions">
                   <button

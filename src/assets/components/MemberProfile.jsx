@@ -35,7 +35,7 @@ function MemberProfile() {
           return;
         }
 
-        const response = await fetch(`https://webportal-n6uv.onrender.com/api/member-profile?member_no=${memberNo}`);
+        const response = await fetch(`${import.meta.env.VITE_API_BASE_URL}/api/member-profile?member_no=${memberNo}`);
         const result = await response.json();
 
         if (result && result.profile) {
