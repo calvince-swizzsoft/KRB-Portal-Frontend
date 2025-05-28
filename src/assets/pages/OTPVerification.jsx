@@ -3,7 +3,7 @@ import { ToastContainer, toast } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 import axios from 'axios';
 import '../css/OTPVerification.css';
-import Logo from "../img/KRBlogo.png"
+import Logo from "../img/KRBLogo.png"
 
 const OTPVerification = () => {
   // State management
