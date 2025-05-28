@@ -2,7 +2,7 @@ import React from 'react';
 import {createBrowserRouter, RouterProvider} from 'react-router-dom';
 
 import Layout from './assets/pages/Layout.jsx';
-import UserAuth from './assets/pages/userauth.jsx';
+import UserAuth from './assets/pages/Userauth.jsx';
 import OTPVerification from './assets/pages/OTPVerification.jsx';
 
 // the compontents /mini pages
