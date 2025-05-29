@@ -20,35 +20,6 @@ const EditProfile = () => {
   const fileInputRef = useRef(null);
   const memberNumber = localStorage.getItem("memberNo");
 
-  // Fetch member details on component mount
-  useEffect(() => {
-    const memberNo = localStorage.getItem("memberNo");
-    const fetchMemberDetails = async () => {
-      try {
-        const response = await fetch(
-          `${
-            import.meta.env.VITE_API_BASE_URL
-          }/api/member-profile/${memberNo}/`
-        );
-
-        if (!response.ok) {
-          throw new Error("Failed to fetch member details");
-        }
-
-        const data = await response.json();
-        setFormData({
-          fullNames: data.FullName || "",
-          phoneNumber: data.Phone || "",
-          email: data.Email || "",
-          iDNumber: data.IDNumber || "",
-        });
-      } catch (error) {
-        toast.error(error.message);
-      }
-    };
-
-    fetchMemberDetails();
-  }, [memberNumber]);
 
   const handleImageChange = (e) => {
     const file = e.target.files[0];

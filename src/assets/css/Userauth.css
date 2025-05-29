@@ -283,6 +283,8 @@ input {
 
   input {
     font-size: 16px;
+    color: black;
+    background-color: #0b3311;
   }
 }
 .mobile-toggle {
@@ -358,7 +360,7 @@ input {
   }
   .userauthform {
   position: relative;
-  background-image: url(../img/KRBlogo.jpg);
+  background-image: url(../img/KRBlogo.png);
   background-size: contain;
   background-repeat: no-repeat;
   background-position: center;

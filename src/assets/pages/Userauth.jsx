@@ -26,46 +26,59 @@ const UserAuth = () => {
     const memberNo = e.target.elements.signInMemberNo.value;
     const password = e.target.elements.Password.value;
 
-    localStorage.setItem("memberNo", memberNo);
-    toast.success("Login successful!");
-    setTimeout(() => {
-      navigate("/Home/Dashboard");
-    }, 2000);
+   try {
+      const response = await fetch(
+        `${import.meta.env.VITE_API_BASE_URL}/api/login-member/`,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            username: memberNo,
+            password: password,
+          }),
+        }
+      );
 
-    // try {
-    //   const response = await fetch(
-    //     `${import.meta.env.VITE_API_BASE_URL}/api/login-member/`,
-    //     {
-    //       method: "POST",
-    //       headers: {
-    //         "Content-Type": "application/json",
-    //       },
-    //       body: JSON.stringify({
-    //         username: memberNo,
-    //         password: password,
-    //       }),
-    //     }
-    //   );
+      const data = await response.json();
+      console.log(data);
 
-    //   const data = await response.json();
-    //   console.log(data);
+      if (response.ok) {
+        localStorage.setItem("memberNo", memberNo);
+        localStorage.setItem("token", data.token || "dummy-token");
 
-    //   if (response.ok) {
-    //     localStorage.setItem("memberNo", memberNo);
-    //     localStorage.setItem("token", data.token || "dummy-token");
+        // if the response is ok sent the login otp
+        const sendotp = await fetch(
+          `${import.meta.env.VITE_API_BASE_URL}/api/send-otp/`,
+          {
+           method: "POST",
+           headers: {
+            "Content-Type": "application/json"
+           },
+           body: JSON.stringify({
+            memberNumber:memberNo
+           }) 
+          }
+        )
 
-    //     toast.success("Login successful!");
-    //     setTimeout(() => {
-    //       navigate("/Home/Dashboard");
-    //     }, 2000);
-    //   } else {
-    //     toast.error(
-    //       data.detail || "Login failed. Please check your credentials."
-    //     );
-    //   }
-    // } catch (error) {
-    //   toast.error("An error occurred. Please try again.");
-    // }
+        if(sendotp.ok){
+          setTimeout(() => {
+            toast.success("Login OTP Sent enter it to have acces to your account")
+          },500)
+        }
+        toast.success("Login successful!");
+        setTimeout(() => {
+          navigate("/login-otp-verification");
+        }, 2000);
+      } else {
+        toast.error(
+          data.detail || "Login failed. Please check your credentials."
+        );
+      }
+    } catch (error) {
+      toast.error("An error occurred. Please try again.");
+    }
   };
   const handleSignup = async (e) => {
     e.preventDefault();
@@ -86,18 +99,19 @@ const UserAuth = () => {
           }),
         }
       );
-      console.log(response);
 
       const data = await response.json();
-      console.log(data);
 
       if (response.ok) {
+
+        sessionStorage.setItem('memberNo',memberNo)
+        
         toast.success("Registration successful!", {
           position: "top-right",
           autoClose: 5000,
           theme: "light",
         });
-        setIsRightPanelActive(false);
+        navigate('/OTPVerification')
       } else {
         toast.error(data.detail || "Registration failed.", {
           position: "top-right",

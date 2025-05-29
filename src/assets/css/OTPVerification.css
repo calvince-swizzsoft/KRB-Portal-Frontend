@@ -118,30 +118,6 @@
   text-align: left;
 }
 
-.resend-otp {
-  margin: 5px 0;
-}
-
-.resend-otp button {
-  background: none;
-  border: none;
-  background-color: #196019;
-  cursor: pointer;
-  font-weight: 500;
-  transition: color 0.3s;
-}
-
-.resend-otp button:hover {
-  color: #fff;
-  text-decoration: underline;
-}
-
-.resend-otp button.disabled {
-  color: #999;
-  cursor: not-allowed;
-  text-decoration: none;
-}
-
 .submit-btn {
   width: 100%;
   padding: 15px;

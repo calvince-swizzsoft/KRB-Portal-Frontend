@@ -1,11 +1,12 @@
 import React from 'react';
-import {createBrowserRouter, RouterProvider} from 'react-router-dom';
+import {createBrowserRouter, RouterProvider, Navigate} from 'react-router-dom';
 
 import Layout from './assets/pages/Layout.jsx';
 import UserAuth from './assets/pages/Userauth.jsx';
 import OTPVerification from './assets/pages/OTPVerification.jsx';
+import ErrorPage from './assets/pages/ErrorPage.jsx'; 
 
-// the compontents /mini pages
+// the components /mini pages
 import MemberProfile from './assets/components/MemberProfile.jsx';
 import MemberAccounts from './assets/components/MemberAccounts.jsx';
 import GuarantorRequest from './assets/components/Gurantorship.jsx';
@@ -23,30 +24,82 @@ import LoanDetailsModal from './assets/components/LoanDetailsModal.jsx'
 import EditProfile from './assets/components/EditProfile.jsx';
 import ShareCertificateStatement from './assets/components/ShareCertificateStatement.jsx';
 import ChangePassword from './assets/components/ChangePassword.jsx';
+import LoginOtpVerification from './assets/pages/LoginOtpVerification.jsx';
+
+
+
+const isLoggedIn = () => localStorage.getItem('token');
+const isLoginOtpVerified = () => sessionStorage.getItem('loginOtpVerified');
+
+// Updated Protected Routes
+const SignUpProtectedRoute = ({ children }) => {
+  return isSignedUp() ? children : <Navigate to="/" replace />;
+};
+
+const LoginOtpProtectedRoute = ({ children }) => {
+  if (!isLoggedIn()) return <Navigate to="/" replace />;
+  return children;
+};
+
+const AuthProtectedRoute = ({ children }) => {
+  if (!isLoggedIn()) return <Navigate to="/" replace />;
+  if (!isLoginOtpVerified()) return <Navigate to="/login-otp-verification" replace />;
+  return children;
+};
 
 const router = createBrowserRouter([
-  {path: "/", element: <UserAuth/>},
-  {path: '/OTPVerification', element: <OTPVerification/> },
-  
   {
-    path: '/Home',
-    element: <Layout />,
+    path: "/",
+    element: <UserAuth />,
+    errorElement: <ErrorPage />
+  },
+  {
+    path: "/OTPVerification",
+    element: (
+      <SignUpProtectedRoute>
+        <OTPVerification />
+      </SignUpProtectedRoute>
+    ),
+    errorElement: <ErrorPage />,
+    loader: () => {
+      sessionStorage.removeItem('signupCompleted'); 
+      return null;
+    }
+  },
+  {
+    path: "/login-otp-verification",
+    element: (
+      <LoginOtpProtectedRoute>
+        <LoginOtpVerification />
+      </LoginOtpProtectedRoute>
+    ),
+    errorElement: <ErrorPage />
+  },
+  {
+    path: "/Home",
+    element: (
+      <AuthProtectedRoute>
+        <Layout />
+      </AuthProtectedRoute>
+    ),
+    errorElement: <ErrorPage />,
     children: [
-      {path: 'Dashboard',element: <Dashboard/>},
-      { path: 'member-profile', element: <MemberProfile/>},
-      { path: 'member-accounts', element: <MemberAccounts /> },
-      { path: 'guarantor-request', element: <GuarantorRequest /> },
-      { path: 'loan-balances', element: <LoanBalances /> },
-      { path: 'loan-application', element: <OnlineLoanApplication/> },
-      { path: 'AppliedLoans', element: <AppliedLoans/>},
-      { path: 'detailed-statement', element: <DetailedStatement /> },
-      { path: 'loan-balance-statement', element: <LoanBalanceStatement /> },
-      { path: 'deposit-statement', element: <DepositStatement /> },
-      { path: 'guarantor-statement', element: <GuarantorStatement /> },
-      { path: 'guaranteed-statement', element: <GuaranteedStatement /> },
-      { path: 'share-certificate',element: <ShareCertificateStatement/>},
-      { path: 'EditProfile',element: <EditProfile/>},
-      { path: 'change-password', element: <ChangePassword/> },
+      {index: true, element: <Navigate to="Dashboard" replace />},
+      {path: 'Dashboard', element: <Dashboard/>},
+      {path: 'member-profile', element: <MemberProfile/>},
+      {path: 'member-accounts', element: <MemberAccounts />},
+      {path: 'guarantor-request', element: <GuarantorRequest />},
+      {path: 'loan-balances', element: <LoanBalances />},
+      {path: 'loan-application', element: <OnlineLoanApplication/>},
+      {path: 'AppliedLoans', element: <AppliedLoans/>},
+      {path: 'detailed-statement', element: <DetailedStatement />},
+      {path: 'loan-balance-statement', element: <LoanBalanceStatement />},
+      {path: 'deposit-statement', element: <DepositStatement />},
+      {path: 'guarantor-statement', element: <GuarantorStatement />},
+      {path: 'guaranteed-statement', element: <GuaranteedStatement />},
+      {path: 'share-certificate', element: <ShareCertificateStatement/>},
+      {path: 'EditProfile', element: <EditProfile/>},
+      {path: 'change-password', element: <ChangePassword/>},
     ],
   },
 ]);

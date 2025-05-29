@@ -61,10 +61,7 @@ function LoanDetailsModal({ loan, onClose }) {
       if (!response.ok) throw new Error("Failed to fetch guarantors");
 
       const data = await response.json();
-      const rawGuarantorString = data.guarantors[0];
-      const parsed = JSON.parse(rawGuarantorString);
-      const guarantorArray = parsed.OnlineGuarantors || [];
-      console.log(guarantorArray);
+      const guarantorArray = data.guarantors;
 
       const transformedGuarantors = guarantorArray.map((g) => ({
         id: g.AccountNo,
@@ -78,7 +75,6 @@ function LoanDetailsModal({ loan, onClose }) {
       }));
 
       setGuarantors(transformedGuarantors);
-      console.log("Guarantors after transformed:", transformedGuarantors);
     } catch (error) {
       toast.error(error.message);
     } finally {
@@ -154,7 +150,10 @@ function LoanDetailsModal({ loan, onClose }) {
       }
 
       toast.success("Guarantor removed successfully");
-      fetchGuarantors();
+
+      setGuarantors((prev) =>
+        prev.filter((g) => g.memberNumber !== memberNumber)
+      );
     } catch (error) {
       toast.error(error.message);
     }
@@ -171,21 +170,27 @@ function LoanDetailsModal({ loan, onClose }) {
     }
 
     setIsSaving(true);
+
     try {
+
+      const payload = {
+        loanNumber: loan.id,
+        memberNumber: localStorage.getItem("memberNo"),
+        amountRequest: editableLoan.amount,
+        loanType: editableLoan.productType,
+        repaymentPeriod: editableLoan.installments,
+      };
+      console.log(payload)
+
       const response = await fetch(
         `${import.meta.env.VITE_API_BASE_URL}/api/edit-loan/`,
         {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            loanNumber: loan.id,
-            memberNumber: localStorage.getItem("memberNo"),
-            amountRequest: editableLoan.amount,
-            loanType: editableLoan.productType,
-            repaymentPeriod: editableLoan.installments,
-          }),
+          body: JSON.stringify(payload),
         }
       );
+      console.log(response);
       if (!response.ok) throw new Error("Failed to save changes");
 
       toast.success("Loan details updated successfully!");

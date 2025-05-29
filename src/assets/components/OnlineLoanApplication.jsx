@@ -147,7 +147,7 @@ function OnlineLoanApplication() {
 
   const payload = {
     bosa_no: memberNo,
-    loan_type: parseInt(selectedLoan.loan_code),
+    loan_type: selectedLoan.loan_code,
     loan_amount: parseFloat(loanAmount),
     loan_purpose: loanPurpose,
     repayment_period: parseInt(repaymentPeriod),
@@ -162,6 +162,7 @@ function OnlineLoanApplication() {
         body: JSON.stringify(payload),
       }
     );
+    console.log(response)
 
     if (!response.ok) {
       const errorData = await response.json();

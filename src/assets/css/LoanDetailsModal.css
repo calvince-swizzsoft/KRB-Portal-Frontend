@@ -26,8 +26,8 @@
 .loan-modal-container {
   background-color: white;
   border-radius: 10px;
-  width: 90%;
-  max-width: 700px;
+  width: fit-content;
+  
   max-height: 90vh;
   overflow-y: auto;
   box-shadow: 0 5px 20px rgba(0, 0, 0, 0.2);
