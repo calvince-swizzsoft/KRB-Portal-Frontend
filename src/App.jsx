@@ -6,7 +6,7 @@ import UserAuth from './assets/pages/Userauth.jsx';
 import OTPVerification from './assets/pages/OTPVerification.jsx';
 import ErrorPage from './assets/pages/ErrorPage.jsx'; 
 
-// the components /mini pages
+
 import MemberProfile from './assets/components/MemberProfile.jsx';
 import MemberAccounts from './assets/components/MemberAccounts.jsx';
 import GuarantorRequest from './assets/components/Gurantorship.jsx';
@@ -27,11 +27,12 @@ import ChangePassword from './assets/components/ChangePassword.jsx';
 import LoginOtpVerification from './assets/pages/LoginOtpVerification.jsx';
 
 
-
+const isSignedUp = () => sessionStorage.getItem('signedup') === 'true';
 const isLoggedIn = () => localStorage.getItem('token');
+// const isLoginOtpVerified = () => sessionStorage.getItem('loginOtpVerified') === 'true';
 const isLoginOtpVerified = () => sessionStorage.getItem('loginOtpVerified');
 
-// Updated Protected Routes
+
 const SignUpProtectedRoute = ({ children }) => {
   return isSignedUp() ? children : <Navigate to="/" replace />;
 };
@@ -59,6 +60,7 @@ const router = createBrowserRouter([
       <SignUpProtectedRoute>
         <OTPVerification />
       </SignUpProtectedRoute>
+        
     ),
     errorElement: <ErrorPage />,
     loader: () => {

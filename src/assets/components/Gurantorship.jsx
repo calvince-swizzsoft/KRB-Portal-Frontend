@@ -1,49 +1,56 @@
-import React, { useState, useEffect } from 'react';
-import { toast } from 'react-toastify';
-import 'react-toastify/dist/ReactToastify.css';
-import KRBLogo from '../img/KRBLogo.png';
-import '../css/Gurantorship.css';
+import React, { useState, useEffect } from "react";
+import { toast } from "react-toastify";
+import "react-toastify/dist/ReactToastify.css";
+import KRBLogo from "../img/KRBLogo.png";
+import "../css/Gurantorship.css";
 
 function Guarantorship() {
   const [requests, setRequests] = useState([]);
   const [filteredRequests, setFilteredRequests] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [searchTerm, setSearchTerm] = useState('');
+  const [searchTerm, setSearchTerm] = useState("");
 
   useEffect(() => {
     fetchGuarantorRequests();
   }, []);
 
   useEffect(() => {
-    const results = requests.filter(request =>
-      request.ApplicantName.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      request.LoanApplicationNo.toLowerCase().includes(searchTerm.toLowerCase())
+    const results = requests.filter(
+      (request) =>
+        request.ApplicantName.toLowerCase().includes(
+          searchTerm.toLowerCase()
+        ) ||
+        request.LoanApplicationNo.toLowerCase().includes(
+          searchTerm.toLowerCase()
+        )
     );
     setFilteredRequests(results);
   }, [searchTerm, requests]);
 
   const fetchGuarantorRequests = async () => {
     try {
-      const memberNo = localStorage.getItem('memberNo');
+      const memberNo = localStorage.getItem("memberNo");
       if (!memberNo) {
-        throw new Error('Member number not found');
+        throw new Error("Member number not found");
       }
 
       const response = await fetch(
-        `${import.meta.env.VITE_API_BASE_URL}/api/loans-for-guarantee/?member=${memberNo}`
+        `${
+          import.meta.env.VITE_API_BASE_URL
+        }/api/loans-for-guarantee/?member=${memberNo}`
       );
 
       const data = await response.json();
 
-      if (data.StatusCode === '400' && data.StatusDescription === 'NoLoans') {
+      if (data.StatusCode === "400" && data.StatusDescription === "NoLoans") {
         setRequests([]);
         setFilteredRequests([]);
-        toast.info('No pending guarantorship requests found');
-      } else if (data.StatusCode === '200') {
+        toast.info("No pending guarantorship requests found");
+      } else if (data.StatusCode === "200") {
         setRequests(data.OnlineRequests);
         setFilteredRequests(data.OnlineRequests);
       } else {
-        throw new Error(data.StatusDescription || 'Failed to fetch requests');
+        throw new Error(data.StatusDescription || "Failed to fetch requests");
       }
     } catch (error) {
       toast.error(error.message);
@@ -54,33 +61,35 @@ function Guarantorship() {
 
   const handleGuarantorshipResponse = async (loanNo, isApproved) => {
     try {
-      const memberNo = localStorage.getItem('memberNo');
+      const memberNo = localStorage.getItem("memberNo");
       if (!memberNo) {
-        throw new Error('Member number not found');
+        throw new Error("Member number not found");
       }
 
       const response = await fetch(
         `${import.meta.env.VITE_API_BASE_URL}/api/approve-guarantorship/`,
         {
-          method: 'POST',
+          method: "POST",
           headers: {
-            'Content-Type': 'application/json',
+            "Content-Type": "application/json",
           },
           body: JSON.stringify({
             memberNo: memberNo,
             loanNo: loanNo,
-            approvedStatus: isApproved ? 0 : 1 // 0 for approve, 1 for reject
+            approvedStatus: isApproved ? 0 : 1, // 0 for approve, 1 for reject
           }),
         }
       );
 
       const data = await response.json();
-      
+
       if (!response.ok) {
-        throw new Error(data.message || 'Failed to process request');
+        throw new Error(data.message || "Failed to process request");
       }
 
-      toast.success(`Request ${isApproved ? 'approved' : 'rejected'} successfully`);
+      toast.success(
+        `Request ${isApproved ? "approved" : "rejected"} successfully`
+      );
       fetchGuarantorRequests(); // Refresh the list
     } catch (error) {
       toast.error(error.message);
@@ -125,49 +134,62 @@ function Guarantorship() {
           <img src="/img/no-requests.svg" alt="No requests" />
           <p>No guarantorship requests found</p>
           {searchTerm && (
-            <button onClick={() => setSearchTerm('')} className="clear-search">
+            <button onClick={() => setSearchTerm("")} className="clear-search">
               Clear search
             </button>
           )}
         </div>
       ) : (
-        <div className="requests-list">
-          {filteredRequests.map((request) => (
-            <div key={request.EntryNo} className="request-card">
-              <div className="request-header">
-                <span className="loan-number">Loan #{request.LoanApplicationNo}</span>
-                <span className="applicant-name">{request.ApplicantName}</span>
-              </div>
-              <div className="request-details">
-                <div className="detail-item">
-                  <span className="detail-label">Amount:</span>
-                  <span className="detail-value">Ksh {request.Amount}</span>
-                </div>
-                <div className="detail-item">
-                  <span className="detail-label">Applicant No:</span>
-                  <span className="detail-value">{request.ApplicantNo}</span>
-                </div>
-                <div className="detail-item">
-                  <span className="detail-label">Status:</span>
-                  <span className="detail-value status-pending">Pending</span>
-                </div>
-              </div>
-              <div className="action-buttons">
-                <button
-                  onClick={() => handleGuarantorshipResponse(request.LoanApplicationNo, true)}
-                  className="accept-btn"
-                >
-                  <i className="icon-check"></i> Approve
-                </button>
-                <button
-                  onClick={() => handleGuarantorshipResponse(request.LoanApplicationNo, false)}
-                  className="reject-btn"
-                >
-                  <i className="icon-cancel"></i> Reject
-                </button>
-              </div>
-            </div>
-          ))}
+        <div className="requests-table-container">
+          <table className="requests-table">
+            <thead>
+              <tr>
+                <th>Loan #</th>
+                <th>Applicant Name</th>
+                <th>Amount</th>
+                <th>Applicant No</th>
+                <th>Status</th>
+                <th>Actions</th>
+              </tr>
+            </thead>
+            <tbody>
+              {filteredRequests.map((request) => (
+                <tr key={request.EntryNo} className="request-row">
+                  <td>{request.LoanApplicationNo}</td>
+                  <td>{request.ApplicantName}</td>
+                  <td>Ksh {request.Amount}</td>
+                  <td>{request.ApplicantNo}</td>
+                  <td>
+                    <span className="status-pending">Pending</span>
+                  </td>
+                  <td className="action-buttons">
+                    <button
+                      onClick={() =>
+                        handleGuarantorshipResponse(
+                          request.LoanApplicationNo,
+                          true
+                        )
+                      }
+                      className="accept-btn"
+                    >
+                      <i className="icon-check"></i> Approve
+                    </button>
+                    <button
+                      onClick={() =>
+                        handleGuarantorshipResponse(
+                          request.LoanApplicationNo,
+                          false
+                        )
+                      }
+                      className="reject-btn"
+                    >
+                      <i className="icon-cancel"></i> Reject
+                    </button>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
         </div>
       )}
     </div>

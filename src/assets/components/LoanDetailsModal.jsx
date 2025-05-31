@@ -2,11 +2,14 @@ import React, { useState, useEffect } from "react";
 import "../css/LoanDetailsModal.css";
 import { toast, ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
+import OTPModal from "./OTPModal";
+import axios from "axios";
 
 function LoanDetailsModal({ loan, onClose }) {
   const [activeTab, setActiveTab] = useState("loan");
   const [showAddGuarantor, setShowAddGuarantor] = useState(false);
   const [isLoadingGuarantors, setIsLoadingGuarantors] = useState(false);
+  const [showOTPModal, setShowOTPModal] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const memberNo = localStorage.getItem("memberNo");

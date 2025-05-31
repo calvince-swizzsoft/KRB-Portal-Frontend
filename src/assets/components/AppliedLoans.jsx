@@ -21,7 +21,7 @@ function AppliedLoans() {
         const response = await fetch(
           `${
             import.meta.env.VITE_API_BASE_URL
-          }/api/applied-loans/?member_no=${encodeURIComponent(memberNo)}`
+          }/api/applied-loans/?member_no=${memberNo}`
         );
         if (!response.ok) throw new Error("Failed to fetch");
 
@@ -80,7 +80,6 @@ function AppliedLoans() {
       );
 
       if (!response.ok) {
-        // Try to parse response if it contains any body, otherwise fallback
         const text = await response.text();
         const errorData = text
           ? JSON.parse(text)
@@ -88,7 +87,6 @@ function AppliedLoans() {
         throw new Error(errorData.message);
       }
 
-      // Remove deleted loan from state
       setLoans((prev) => prev.filter((loan) => loan.id !== loanId));
       toast.success(`Loan ${loanId} deleted successfully`);
     } catch (err) {

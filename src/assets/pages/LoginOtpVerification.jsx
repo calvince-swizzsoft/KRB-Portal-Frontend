@@ -82,7 +82,7 @@ const LoginOtpVerification = () => {
 
     toast.success(response.data.message || "Verification successful!");
     sessionStorage.setItem("loginOtpVerified","OTPVERIFICATIONCOMPLETE")
-    navigate("/Home/Dashboard");
+    navigate("/Home");
   } catch (error) {
     console.error(error.response?.data);
     toast.error(

@@ -26,7 +26,7 @@ const UserAuth = () => {
     const memberNo = e.target.elements.signInMemberNo.value;
     const password = e.target.elements.Password.value;
 
-   try {
+    try {
       const response = await fetch(
         `${import.meta.env.VITE_API_BASE_URL}/api/login-member/`,
         {
@@ -48,24 +48,26 @@ const UserAuth = () => {
         localStorage.setItem("memberNo", memberNo);
         localStorage.setItem("token", data.token || "dummy-token");
 
-        // if the response is ok sent the login otp
+        // if the response is ok send the login otp to the logged in user 
         const sendotp = await fetch(
           `${import.meta.env.VITE_API_BASE_URL}/api/send-otp/`,
           {
-           method: "POST",
-           headers: {
-            "Content-Type": "application/json"
-           },
-           body: JSON.stringify({
-            memberNumber:memberNo
-           }) 
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+            },
+            body: JSON.stringify({
+              memberNumber: memberNo,
+            }),
           }
-        )
+        );
 
-        if(sendotp.ok){
+        if (sendotp.ok) {
           setTimeout(() => {
-            toast.success("Login OTP Sent enter it to have acces to your account")
-          },500)
+            toast.success(
+              "Login OTP Sent enter it to have acces to your account"
+            );
+          }, 500);
         }
         toast.success("Login successful!");
         setTimeout(() => {
@@ -101,19 +103,23 @@ const UserAuth = () => {
       );
 
       const data = await response.json();
+      const signedup = false;
 
-      if (response.ok) {
+      if (data.status === "success" && data.service_response === true) {
+        sessionStorage.setItem("memberNo", memberNo);
+        sessionStorage.setItem("signedup", !signedup);
 
-        sessionStorage.setItem('memberNo',memberNo)
-        
-        toast.success("Registration successful!", {
-          position: "top-right",
-          autoClose: 5000,
-          theme: "light",
-        });
-        navigate('/OTPVerification')
-      } else {
-        toast.error(data.detail || "Registration failed.", {
+        setTimeout(() => {
+          toast.success("Registration successful!", {
+            position: "top-right",
+            autoClose: 5000,
+            theme: "light",
+          });
+        }, 2000);
+
+        navigate("/OTPVerification");
+      } else if (data.status === "fail") {
+        toast.error(data.detail || "Invalid Credentials", {
           position: "top-right",
           autoClose: 5000,
           theme: "light",
@@ -134,7 +140,13 @@ const UserAuth = () => {
         isMobileMode ? "mobile-mode" : ""
       }`}
     >
-      <ToastContainer position="top-right" />
+      <ToastContainer
+        position="top-right"
+        toastStyle={{
+          backgroundColor: "white",
+          color: "red",
+        }}
+      />
       <div className="form-container sign-in-container">
         <form onSubmit={handleLogin} className="userauthform">
           <h1>Sign in</h1>

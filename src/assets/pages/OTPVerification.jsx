@@ -80,7 +80,6 @@ const OTPVerification = () => {
         current_pass: otp.join(""),
         new_pass: password,
       };
-      console.log(JSON.stringify(payload));
 
       const response = await axios.post(
         `${import.meta.env.VITE_API_BASE_URL}/api/change-password/`,
@@ -97,7 +96,8 @@ const OTPVerification = () => {
       if (response.status === 200) {
         toast.success(response.data.message || "Verification successful!");
         sessionStorage.clear()
-        sessionStorage.setItem('signupCompleted',"SignUpCompleted")
+
+        sessionStorage.setItem('signedup', 'true');
         navigate("/");
       }
     } catch (error) {

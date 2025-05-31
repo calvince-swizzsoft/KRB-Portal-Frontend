@@ -3,12 +3,16 @@ import { FaCamera, FaTimes } from "react-icons/fa";
 import { toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 import { ToastContainer } from "react-toastify";
+import OTPModal from "./OTPModal";
+import axios from "axios";
 import KRBLogo from "../img/KRBLogo.png";
 import "../css/EditProfile.css";
 
 const EditProfile = () => {
   const [profileImage, setProfileImage] = useState(null);
   const [previewImage, setPreviewImage] = useState(null);
+  const [showOTPModal, setShowOTPModal] = useState(false);
+  const [isVerifying, setIsVerifying] = useState(false);
   const [formData, setFormData] = useState({
     fullNames: "",
     phoneNumber: "",
@@ -19,7 +23,6 @@ const EditProfile = () => {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const fileInputRef = useRef(null);
   const memberNumber = localStorage.getItem("memberNo");
-
 
   const handleImageChange = (e) => {
     const file = e.target.files[0];
@@ -32,6 +35,15 @@ const EditProfile = () => {
       reader.readAsDataURL(file);
     }
   };
+
+  useEffect(() => {
+    if (showOTPModal) {
+      document.body.classList.add("modal-open");
+    } else {
+      document.body.classList.remove("modal-open");
+    }
+    return () => document.body.classList.remove("modal-open");
+  }, [showOTPModal]);
 
   const handleRemoveImage = () => {
     setProfileImage(null);
@@ -91,42 +103,101 @@ const EditProfile = () => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-
     if (!validateForm()) return;
-
+    setShowOTPModal(true);
     setIsSubmitting(true);
 
     try {
-      const payload = {
-        memberNumber,
-        fullNames: formData.fullNames,
-        phoneNumber: formData.phoneNumber,
-        email: formData.email,
-        iDNumber: formData.iDNumber,
-      };
+      // First request OTP to be sent before proceding through the api
+      const otpRequest = await fetch(
+        `${import.meta.env.VITE_API_BASE_URL}/api/send-otp/`,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            memberNumber: memberNumber,
+          }),
+        }
+      );
 
-      const response = await fetch(
+      const otpRequestData = await otpRequest.json();
+
+      if (!otpRequest.ok) {
+        throw new Error(otpRequestData.message || "Failed to send OTP");
+      }
+
+      toast.info("OTP sent to your registered phone number");
+    } catch (error) {
+      toast.error(error.message);
+      setShowOTPModal(false);
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  const handleOTPVerify = async (otp) => {
+    setIsVerifying(true);
+    try {
+      const otpResponse = await axios.post(
+        `${import.meta.env.VITE_API_BASE_URL}/api/confirm-otp/`,
+        {
+          memberNumber: memberNumber,
+          otpCode: otp,
+        },
+        {
+          headers: {
+            "Content-Type": "application/json",
+          },
+        }
+      );
+
+      const otpData = await otpResponse.data;
+
+      if (otpResponse.status !== 200) {
+        throw new Error(otpData.message || "OTP verification failed");
+      }
+
+      // Upon Successfull confirmation of the OTP proced to the parent logic
+      const profileResponse = await fetch(
         `${import.meta.env.VITE_API_BASE_URL}/api/edit-member-details/`,
         {
           method: "POST",
           headers: {
             "Content-Type": "application/json",
           },
-          body: JSON.stringify(payload),
+          body: JSON.stringify({
+            memberNumber,
+            fullNames: formData.fullNames,
+            phoneNumber: formData.phoneNumber,
+            email: formData.email,
+            iDNumber: formData.iDNumber,
+          }),
         }
       );
 
-      const data = await response.json();
+      const profileData = await profileResponse.json();
 
-      if (!response.ok) {
-        throw new Error(data.message || "Failed to update profile");
+      if (!profileResponse.ok) {
+        throw new Error(profileData.message || "Failed to update profile");
       }
 
-      toast.success("Profile updated successfully!");
+      setTimeout(() => {
+        setFormData({
+          fullNames: "",
+          phoneNumber: "",
+          email: "",
+          iDNumber: "",
+        });
+
+        setShowOTPModal(false);
+      }, 800);
+      
     } catch (error) {
-      toast.error(error.message || "An error occurred while updating profile");
+      toast.error(error.message);
     } finally {
-      setIsSubmitting(false);
+      setIsVerifying(false);
     }
   };
 
@@ -143,6 +214,7 @@ const EditProfile = () => {
         draggable
         pauseOnHover
       />
+
       <div className="header-section">
         <div className="logo-container">
           <img src={KRBLogo} alt="KRB Logo" className="krb-logo" />
@@ -259,6 +331,12 @@ const EditProfile = () => {
           </div>
         </form>
       </div>
+      <OTPModal
+        isOpen={showOTPModal}
+        onClose={() => setShowOTPModal(false)}
+        onVerify={handleOTPVerify}
+        isLoading={isVerifying}
+      />
     </div>
   );
 };
