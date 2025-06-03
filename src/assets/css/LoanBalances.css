@@ -208,3 +208,83 @@
     gap: 0.5rem;
   }
 }
+.loan-table-wrapper {
+  width: 100%;
+  overflow-x: auto;
+}
+
+.loan-table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.loan-table th,
+.loan-table td {
+  padding: 12px 8px;
+  border: 1px solid #ddd;
+  text-align: left;
+}
+
+.loan-status.approved {
+  color: green;
+  font-weight: bold;
+}
+
+.loan-status.pending {
+  color: orange;
+  font-weight: bold;
+}
+
+.loan-status.rejected {
+  color: red;
+  font-weight: bold;
+}
+
+.arrears {
+  color: red;
+  font-weight: bold;
+}
+
+/* Responsive stacked layout */
+@media (max-width: 768px) {
+  .loan-table,
+  .loan-table thead,
+  .loan-table tbody,
+  .loan-table th,
+  .loan-table td,
+  .loan-table tr {
+    display: block;
+  }
+
+  .loan-table thead {
+    display: none; /* Hide the table header */
+  }
+  .search-box input{
+    background-color: white;
+  }
+
+  .loan-table tr {
+    margin-bottom: 15px;
+    border-bottom: 2px solid #ccc;
+    padding: 10px 0;
+  }
+
+  .loan-table td {
+    position: relative;
+    padding-left: 50%;
+    text-align: left;
+    border: none;
+    border-bottom: 1px solid #eee;
+  }
+
+  .loan-table td::before {
+    content: attr(data-label);
+    position: absolute;
+    left: 15px;
+    top: 50%;
+    transform: translateY(-50%);
+    font-weight: bold;
+    color: #333;
+    white-space: nowrap;
+  }
+}

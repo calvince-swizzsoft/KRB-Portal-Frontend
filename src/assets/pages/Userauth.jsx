@@ -10,6 +10,7 @@ const UserAuth = () => {
   const [isMobileMode, setIsMobileMode] = useState(false);
   const [memberNo, setMemberNo] = useState("");
   const [password, setPassword] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -27,6 +28,8 @@ const UserAuth = () => {
     const password = e.target.elements.Password.value;
 
     try {
+      toast.info("Authenticating credentials...");
+
       const response = await fetch(
         `${import.meta.env.VITE_API_BASE_URL}/api/login-member/`,
         {
@@ -42,13 +45,13 @@ const UserAuth = () => {
       );
 
       const data = await response.json();
-      console.log(data);
 
       if (response.ok) {
+        toast.success("Login successful. Sending OTP...");
         localStorage.setItem("memberNo", memberNo);
         localStorage.setItem("token", data.token || "dummy-token");
 
-        // if the response is ok send the login otp to the logged in user 
+        // if the response is ok send the login otp to the logged in user
         const sendotp = await fetch(
           `${import.meta.env.VITE_API_BASE_URL}/api/send-otp/`,
           {
@@ -69,7 +72,6 @@ const UserAuth = () => {
             );
           }, 500);
         }
-        toast.success("Login successful!");
         setTimeout(() => {
           navigate("/login-otp-verification");
         }, 2000);
@@ -84,6 +86,7 @@ const UserAuth = () => {
   };
   const handleSignup = async (e) => {
     e.preventDefault();
+    toast.info("Processing your registration...");
     const memberNo = e.target.elements.signUpMemberNo.value;
     const idNo = e.target.elements.IdNumber.value;
 
@@ -155,24 +158,42 @@ const UserAuth = () => {
             <label htmlFor="signInMemberNo">Member Number</label>
             <input
               type="text"
-              id="signInMemberNo"
+              name="signInMemberNo"
               value={memberNo}
               onChange={(e) => setMemberNo(e.target.value)}
               placeholder="Enter Member Number"
               required
+              disabled={isRightPanelActive}
             />
           </div>
           <div className="input-group">
             <label htmlFor="Password">Password</label>
             <input
-              type="password"
-              id="Password"
+              type={showPassword ? "text" : "password"}
+              name="Password"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               placeholder="Enter Password"
               required
+              disabled={isRightPanelActive}
             />
+            <label
+              style={{
+                marginTop: "5px",
+                display: "flex",
+                width: "100%",
+                fontSize: "16px",
+              }}
+            >
+              <input
+                type="checkbox"
+                style={{ height: "15px", width: "30px" }}
+                onClick={() => setShowPassword((prev) => !prev)}
+              />{" "}
+              Show Password
+            </label>
           </div>
+
           {isMobileMode && (
             <div className="mobile-toggle">
               <button onClick={togglePanel}>
@@ -195,9 +216,10 @@ const UserAuth = () => {
             <input
               type="text"
               id="signUpMemberNo"
-              name="MemberNo"
+              name="signUpMemberNo"
               placeholder="Enter Member Number"
               required
+              disabled={!isRightPanelActive}
             />
           </div>
           <div className="input-group">
@@ -208,6 +230,7 @@ const UserAuth = () => {
               name="IdNumber"
               placeholder="Enter ID Number"
               required
+              disabled={!isRightPanelActive}
             />
           </div>
           {isMobileMode && (

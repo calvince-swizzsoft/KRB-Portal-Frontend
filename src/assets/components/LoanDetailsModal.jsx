@@ -9,9 +9,11 @@ function LoanDetailsModal({ loan, onClose }) {
   const [activeTab, setActiveTab] = useState("loan");
   const [showAddGuarantor, setShowAddGuarantor] = useState(false);
   const [isLoadingGuarantors, setIsLoadingGuarantors] = useState(false);
-  const [showOTPModal, setShowOTPModal] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
+  const [activeMembers, setActiveMembers] = useState([]);
+  const [filteredMembers, setFilteredMembers] = useState([]);
+  const [searchQuery, setSearchQuery] = useState("");
   const memberNo = localStorage.getItem("memberNo");
   const [editableLoan, setEditableLoan] = useState({
     amount: 0,
@@ -21,7 +23,6 @@ function LoanDetailsModal({ loan, onClose }) {
   const [guarantorDetails, setGuarantorDetails] = useState({
     name: "",
     memberNumber: "",
-    amount: "",
   });
   const [guarantors, setGuarantors] = useState([]);
 
@@ -35,6 +36,39 @@ function LoanDetailsModal({ loan, onClose }) {
       fetchGuarantors();
     }
   }, [loan]);
+
+  useEffect(() => {
+    if (showAddGuarantor) {
+      fetchActiveMembers();
+    }
+  }, [showAddGuarantor]);
+
+  useEffect(() => {
+    if (searchQuery) {
+      const filtered = activeMembers.filter((member) =>
+        member.MemberName.toLowerCase().includes(searchQuery.toLowerCase())
+      );
+      setFilteredMembers(filtered);
+    } else {
+      setFilteredMembers([]);
+    }
+  }, [searchQuery, activeMembers]);
+
+  const fetchActiveMembers = async () => {
+    try {
+      const response = await fetch(
+        `${import.meta.env.VITE_API_BASE_URL}/api/active-members/`
+      );
+      if (!response.ok) throw new Error("Failed to fetch active members");
+
+      const data = await response.json();
+      if (data.status === "success" && data.active_members.OnlineGuarantors) {
+        setActiveMembers(data.active_members.OnlineGuarantors);
+      }
+    } catch (error) {
+      toast.error(error.message);
+    }
+  };
 
   const handleLoanChange = (e) => {
     const { name, value } = e.target;
@@ -50,6 +84,16 @@ function LoanDetailsModal({ loan, onClose }) {
       ...prev,
       [name]: value,
     }));
+    setSearchQuery(value);
+  };
+
+  const selectMember = (member) => {
+    setGuarantorDetails({
+      name: member.MemberName,
+      memberNumber: member.MemberNo,
+    });
+    setSearchQuery(member.MemberName);
+    setFilteredMembers([]);
   };
 
   const fetchGuarantors = async () => {
@@ -86,8 +130,8 @@ function LoanDetailsModal({ loan, onClose }) {
   };
 
   const addGuarantor = async () => {
-    if (!guarantorDetails.memberNumber || !guarantorDetails.amount) {
-      toast.error("Please fill all required guarantor details");
+    if (!guarantorDetails.memberNumber) {
+      toast.error("Please select a member");
       return;
     }
 
@@ -96,10 +140,7 @@ function LoanDetailsModal({ loan, onClose }) {
       const payload = {
         member_number: guarantorDetails.memberNumber,
         loan_number: loan.id,
-        amount: guarantorDetails.amount,
       };
-
-      console.log("Sending payload:", payload);
 
       const response = await fetch(
         `${import.meta.env.VITE_API_BASE_URL}/api/request-guarantorship/`,
@@ -112,14 +153,14 @@ function LoanDetailsModal({ loan, onClose }) {
 
       const data = await response.json();
 
-      if (!response.ok) {
+      if (response.status !== 200) {
         toast.error(data.message || "Failed to send guarantor request");
         return;
       }
 
       toast.success(data.message || "Guarantor request sent successfully");
 
-      setGuarantorDetails({ name: "", memberNumber: "", amount: "" });
+      setGuarantorDetails({ name: "", memberNumber: "" });
       setShowAddGuarantor(false);
       fetchGuarantors();
     } catch (error) {
@@ -175,15 +216,13 @@ function LoanDetailsModal({ loan, onClose }) {
     setIsSaving(true);
 
     try {
-
       const payload = {
         loanNumber: loan.id,
         memberNumber: localStorage.getItem("memberNo"),
-        amountRequest: editableLoan.amount,
+        amountRequest: String(editableLoan.amount),
         loanType: editableLoan.productType,
         repaymentPeriod: editableLoan.installments,
       };
-      console.log(payload)
 
       const response = await fetch(
         `${import.meta.env.VITE_API_BASE_URL}/api/edit-loan/`,
@@ -193,11 +232,9 @@ function LoanDetailsModal({ loan, onClose }) {
           body: JSON.stringify(payload),
         }
       );
-      console.log(response);
       if (!response.ok) throw new Error("Failed to save changes");
 
       toast.success("Loan details updated successfully!");
-      onClose();
     } catch (error) {
       toast.error(error.message);
     } finally {
@@ -229,9 +266,11 @@ function LoanDetailsModal({ loan, onClose }) {
         toast.error(data.message || "Failed to submit loan");
         return;
       }
-
       toast.success(data.message || "Loan submitted successfully");
-      onClose();
+
+      setTimeout(() => {
+        onclose();
+      }, 2000);
     } catch (error) {
       toast.error("An unexpected error occurred while submitting the loan");
       console.error(error);
@@ -371,26 +410,46 @@ function LoanDetailsModal({ loan, onClose }) {
                   <div className="add-guarantor-section">
                     {showAddGuarantor ? (
                       <div className="guarantor-form">
+                        <div className="member-search-container">
+                          <input
+                            type="text"
+                            placeholder="Search member by name"
+                            name="name"
+                            value={searchQuery}
+                            onChange={(e) => {
+                              setSearchQuery(e.target.value);
+                              setGuarantorDetails({
+                                ...guarantorDetails,
+                                name: e.target.value,
+                              });
+                            }}
+                            className="guarantor-input"
+                          />
+                          {filteredMembers.length > 0 && (
+                            <div className="member-dropdown">
+                              {filteredMembers.map((member) => (
+                                <div
+                                  key={member.MemberNo}
+                                  className="member-dropdown-item"
+                                  onClick={() => selectMember(member)}
+                                >
+                                  {member.MemberName} ({member.MemberNo})
+                                </div>
+                              ))}
+                            </div>
+                          )}
+                        </div>
                         <input
-                          type="text"
-                          placeholder="Member Number"
+                          type="hidden"
                           name="memberNumber"
                           value={guarantorDetails.memberNumber}
-                          onChange={handleGuarantorChange}
-                          className="guarantor-input"
-                        />
-                        <input
-                          type="number"
-                          placeholder="Amount"
-                          name="amount"
-                          value={guarantorDetails.amount}
-                          onChange={handleGuarantorChange}
-                          className="guarantor-input"
                         />
                         <div className="guarantor-actions">
                           <button
                             onClick={addGuarantor}
-                            disabled={isSubmitting}
+                            disabled={
+                              isSubmitting || !guarantorDetails.memberNumber
+                            }
                             className={`guarantor-submit-btn ${
                               isSubmitting ? "disabled" : ""
                             }`}
@@ -398,7 +457,11 @@ function LoanDetailsModal({ loan, onClose }) {
                             {isSubmitting ? "Submitting..." : "Add Guarantor"}
                           </button>
                           <button
-                            onClick={() => setShowAddGuarantor(false)}
+                            onClick={() => {
+                              setShowAddGuarantor(false);
+                              setSearchQuery("");
+                              setFilteredMembers([]);
+                            }}
                             className="guarantor-cancel-btn"
                           >
                             Cancel

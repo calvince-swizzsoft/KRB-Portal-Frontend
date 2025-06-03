@@ -1,8 +1,8 @@
 import React, { useState, useEffect } from "react";
 import { toast, ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
-import OTPModal from "./OTPModal"; 
-import axios from "axios";  
+import OTPModal from "./OTPModal";
+import axios from "axios";
 import "../css/OnlineLoanApplication.css";
 import KRBLogo from "../img/KRBLogo.png";
 import { Navigate, useNavigate } from "react-router-dom";
@@ -25,10 +25,8 @@ function OnlineLoanApplication() {
     isError: false,
     isSuccess: false,
   });
-  const [showOTPModal, setShowOTPModal] = useState(false);
-  const [isVerifyingOTP, setIsVerifyingOTP] = useState(false);
   const [loanApplicationData, setLoanApplicationData] = useState(null);
-  const navigate = useNavigate()
+  const navigate = useNavigate();
 
   const memberNo = localStorage.getItem("memberNo");
 
@@ -63,15 +61,6 @@ function OnlineLoanApplication() {
 
     fetchLoanProducts();
   }, []);
-
-  useEffect(() => {
-    if (showOTPModal) {
-      document.body.classList.add("modal-open");
-    } else {
-      document.body.classList.remove("modal-open");
-    }
-    return () => document.body.classList.remove("modal-open");
-  }, [showOTPModal]);
 
   useEffect(() => {
     let results = loanProducts;
@@ -157,7 +146,7 @@ function OnlineLoanApplication() {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    
+
     if (!validateInputs()) return;
 
     const payload = {
@@ -167,96 +156,45 @@ function OnlineLoanApplication() {
       loan_purpose: loanPurpose,
       repayment_period: parseInt(repaymentPeriod),
     };
+    console.log(JSON.stringify(payload))
 
     setLoanApplicationData(payload);
-    
     try {
-      const otpRequest = await fetch(
-        `${import.meta.env.VITE_API_BASE_URL}/api/send-otp/`,
-        {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({
-            memberNumber: memberNo,
-          }),
-        }
-      );
-      
-      if (!otpRequest.ok) {
-        const errorData = await otpRequest.json();
-        throw new Error(errorData.message || "Failed to send OTP");
-      }
-      
-      setShowOTPModal(true);
-      closeModal();
-      toast.info("OTP sent to your registered phone number");
-      
-    } catch (error) {
-      toast.error(error.message);
-    }
-  };
-
-  const handleOTPVerify = async (otp) => {
-    setIsVerifyingOTP(true);
-    try {
-     const otpResponse = await axios.post(
-        `${import.meta.env.VITE_API_BASE_URL}/api/confirm-otp/`,
-        {
-          memberNumber: memberNo,
-          otpCode: otp,
-        },
-        {
-          headers: {
-            "Content-Type": "application/json",
-          },
-        }
-      );
-
-      const otpData = otpResponse.data;
-
-      if (otpResponse.status !== 200) {
-        throw new Error(otpData.message || "OTP verification failed");
-      }
-
       const loanResponse = await fetch(
         `${import.meta.env.VITE_API_BASE_URL}/api/apply-loan/`,
         {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(loanApplicationData),
+          body: JSON.stringify(payload),
         }
       );
 
       if (!loanResponse.ok) {
         const errorData = await loanResponse.json();
-        throw new Error(errorData.message || "Failed to submit loan application");
+        throw new Error(
+          errorData.message || "Failed to submit loan application"
+        );
       }
-      
+
       toast.success("Loan application submitted successfully!");
-      setShowOTPModal(false);
       setSubmitStatus({
         message: "Loan application submitted successfully!",
         isError: false,
-        isSuccess: true
+        isSuccess: true,
       });
-      navigate('/Home/AppliedLoans')
       setTimeout(() => {
         closeModal();
-      }, 2000);
+        navigate("/Home/AppliedLoans");
+      }, 10000);
     } catch (error) {
       toast.error(error.message);
       setSubmitStatus({
         message: error.message || "An unexpected error occurred",
         isError: true,
-        isSuccess: false
+        isSuccess: false,
       });
-    } finally {
-      setIsVerifyingOTP(false);
     }
   };
-
 
   return (
     <div className="onlineloanapplication-maincontainer">
@@ -348,7 +286,7 @@ function OnlineLoanApplication() {
                   </div>
                   <div className="detail-row">
                     <span className="detail-label">Interest Rate:</span>
-                    <span className="detail-value">{loan.interestRate}%</span>
+                    <span className="detail-value">{parseFloat(loan.interestRate).toFixed(2).replace(/\.00$/, '')}%</span>
                   </div>
                   <div className="detail-row">
                     <span className="detail-label">Max Period:</span>
@@ -472,12 +410,6 @@ function OnlineLoanApplication() {
           </div>
         </div>
       )}
-      <OTPModal
-        isOpen={showOTPModal}
-        onClose={() => setShowOTPModal(false)}
-        onVerify={handleOTPVerify}
-        isLoading={isVerifyingOTP}
-      />
     </div>
   );
 }

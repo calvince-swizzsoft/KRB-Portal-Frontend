@@ -60,7 +60,7 @@ const Navbar = ({ isOpen, setIsOpen, onLinkClick }) => {
 
     try {
       const response = await fetch(
-        `${import.meta.env.VITE_API_BASE_URL}/api/member-profile?member_no=${encodeURI(memberNo)}`
+        `${import.meta.env.VITE_API_BASE_URL}/api/member-profile?member_no=${(memberNo)}`
       );
       if (!response.ok) throw new Error("Failed to fetch member profile");
 

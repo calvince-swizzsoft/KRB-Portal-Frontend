@@ -58,7 +58,6 @@ function AppliedLoans() {
   }, [vite_baseurl, memberNo]);
 
   const handleDelete = async (loanId) => {
-    // First confirm with the user
     const confirmDelete = window.confirm(
       `Are you sure you want to delete loan ${loanId}?`
     );

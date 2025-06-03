@@ -18,13 +18,14 @@ const EditProfile = () => {
     phoneNumber: "",
     email: "",
     iDNumber: "",
+    kRAPin: "",
   });
   const [errors, setErrors] = useState({});
   const [isSubmitting, setIsSubmitting] = useState(false);
   const fileInputRef = useRef(null);
   const memberNumber = localStorage.getItem("memberNo");
 
-  const handleImageChange = (e) => {
+  const ImageChange = (e) => {
     const file = e.target.files[0];
     if (file) {
       setProfileImage(file);
@@ -35,15 +36,6 @@ const EditProfile = () => {
       reader.readAsDataURL(file);
     }
   };
-
-  useEffect(() => {
-    if (showOTPModal) {
-      document.body.classList.add("modal-open");
-    } else {
-      document.body.classList.remove("modal-open");
-    }
-    return () => document.body.classList.remove("modal-open");
-  }, [showOTPModal]);
 
   const handleRemoveImage = () => {
     setProfileImage(null);
@@ -96,108 +88,86 @@ const EditProfile = () => {
     } else if (!/^\d{7,8}$/.test(formData.iDNumber)) {
       newErrors.iDNumber = "ID number must be 7 or 8 digits";
     }
+    if (!formData.kRAPin.trim()) {
+      newErrors.kRAPin = "KRA PIN is required";
+    }
 
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
+  };
+  const handleImageChange = (e) => {
+    const file = e.target.files[0];
+    if (file) {
+      setProfileImage(file);
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        setPreviewImage(reader.result);
+      };
+      reader.readAsDataURL(file);
+    }
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     if (!validateForm()) return;
-    setShowOTPModal(true);
+
     setIsSubmitting(true);
 
-    try {
-      // First request OTP to be sent before proceding through the api
-      const otpRequest = await fetch(
-        `${import.meta.env.VITE_API_BASE_URL}/api/send-otp/`,
-        {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({
-            memberNumber: memberNumber,
-          }),
-        }
-      );
-
-      const otpRequestData = await otpRequest.json();
-
-      if (!otpRequest.ok) {
-        throw new Error(otpRequestData.message || "Failed to send OTP");
-      }
-
-      toast.info("OTP sent to your registered phone number");
-    } catch (error) {
-      toast.error(error.message);
-      setShowOTPModal(false);
-    } finally {
-      setIsSubmitting(false);
+    let imageBlob = null;
+    if (profileImage) {
+      const reader = new FileReader();
+      reader.onloadend = async () => {
+        imageBlob = reader.result.split(",")[1]; // Remove base64 prefix
+        await submitProfile(imageBlob);
+      };
+      reader.readAsDataURL(profileImage);
+    } else {
+      await submitProfile(null);
     }
   };
 
-  const handleOTPVerify = async (otp) => {
-    setIsVerifying(true);
+  const submitProfile = async (imageBlob) => {
+    const dataToSend = {
+      memberNumber,
+      fullNames: formData.fullNames,
+      phoneNumber: formData.phoneNumber,
+      email: formData.email,
+      iDNumber: formData.iDNumber,
+      kRAPin: formData.kRAPin,
+      imageBlob: imageBlob || "",
+    };
+
     try {
-      const otpResponse = await axios.post(
-        `${import.meta.env.VITE_API_BASE_URL}/api/confirm-otp/`,
-        {
-          memberNumber: memberNumber,
-          otpCode: otp,
-        },
-        {
-          headers: {
-            "Content-Type": "application/json",
-          },
-        }
-      );
-
-      const otpData = await otpResponse.data;
-
-      if (otpResponse.status !== 200) {
-        throw new Error(otpData.message || "OTP verification failed");
-      }
-
-      // Upon Successfull confirmation of the OTP proced to the parent logic
-      const profileResponse = await fetch(
+      const response = await axios.post(
         `${import.meta.env.VITE_API_BASE_URL}/api/edit-member-details/`,
-        {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({
-            memberNumber,
-            fullNames: formData.fullNames,
-            phoneNumber: formData.phoneNumber,
-            email: formData.email,
-            iDNumber: formData.iDNumber,
-          }),
-        }
+        dataToSend
       );
 
-      const profileData = await profileResponse.json();
+      if (response.status === 200) {
+        toast.success("Profile updated successfully");
 
-      if (!profileResponse.ok) {
-        throw new Error(profileData.message || "Failed to update profile");
-      }
-
-      setTimeout(() => {
+        // Reset the form fields and image
         setFormData({
           fullNames: "",
           phoneNumber: "",
           email: "",
           iDNumber: "",
+          kRAPin: "",
         });
 
-        setShowOTPModal(false);
-      }, 800);
-      
+        setProfileImage(null);
+        setPreviewImage(null);
+        if (fileInputRef.current) {
+          fileInputRef.current.value = "";
+        }
+      } else {
+        toast.error("Something went wrong. Please try again.");
+      }
     } catch (error) {
-      toast.error(error.message);
+      toast.error("Failed to update profile");
+      console.error("Update Error:", error);
     } finally {
-      setIsVerifying(false);
+      setIsSubmitting(false);
     }
   };
 
@@ -215,43 +185,34 @@ const EditProfile = () => {
         pauseOnHover
       />
 
-      <div className="header-section">
-        <div className="logo-container">
-          <img src={KRBLogo} alt="KRB Logo" className="krb-logo" />
-          <div className="sacco-name">Kenya Road Board Sacco</div>
-        </div>
-        <h1 className="page-title">Edit Profile</h1>
-      </div>
+     <div className="profile-picture-section">
+  <div className="profile-image-container">
+    {previewImage ? (
+      <>
+        <img src={previewImage} alt="Profile" className="profile-image" />
+        <button
+          className="remove-image-button"
+          onClick={handleRemoveImage}
+        >
+          <FaTimes />
+        </button>
+      </>
+    ) : (
+      <div className="default-profile">👤</div>
+    )}
+    <label className="upload-button" onClick={handleUploadClick}>
+      <FaCamera />
+    </label>
+    <input
+      type="file"
+      ref={fileInputRef}
+      onChange={handleImageChange}
+      accept="image/*"
+      className="hidden-input"
+    />
+  </div>
+</div>
 
-      <div className="profile-picture-section">
-        <div className="profile-image-container">
-          {previewImage ? (
-            <>
-              <img src={previewImage} alt="Profile" className="profile-image" />
-              <button
-                className="remove-image-button"
-                onClick={handleRemoveImage}
-              >
-                <FaTimes />
-              </button>
-            </>
-          ) : (
-            <div className="default-profile">👤</div>
-          )}
-
-          <label className="upload-button" onClick={handleUploadClick}>
-            <FaCamera />
-          </label>
-
-          <input
-            type="file"
-            ref={fileInputRef}
-            onChange={handleImageChange}
-            accept="image/*"
-            className="hidden-input"
-          />
-        </div>
-      </div>
 
       <div className="profile-info-section">
         <h2 className="section-title">Profile Information</h2>
@@ -320,6 +281,21 @@ const EditProfile = () => {
             )}
           </div>
 
+          <div className="form-field">
+            <label>KRA PIN</label>
+            <input
+              type="text"
+              name="kRAPin"
+              value={formData.kRAPin}
+              onChange={handleInputChange}
+              placeholder="Enter Your KRA PIN A110B45"
+              className={`form-input ${errors.kRAPin ? "error" : ""}`}
+            />
+            {errors.kRAPin && (
+              <span className="error-message">{errors.kRAPin}</span>
+            )}
+          </div>
+
           <div className="button-section">
             <button
               type="submit"
@@ -331,12 +307,6 @@ const EditProfile = () => {
           </div>
         </form>
       </div>
-      <OTPModal
-        isOpen={showOTPModal}
-        onClose={() => setShowOTPModal(false)}
-        onVerify={handleOTPVerify}
-        isLoading={isVerifying}
-      />
     </div>
   );
 };

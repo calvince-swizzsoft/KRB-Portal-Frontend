@@ -10,6 +10,8 @@ const OTPVerification = () => {
   const [otp, setOtp] = useState(["", "", "", ""]);
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
+  const [showNewPassword, setShowNewPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [errors, setErrors] = useState({});
   const [isLoading, setIsLoading] = useState(false);
   const otpInputs = useRef([]);
@@ -152,32 +154,48 @@ const OTPVerification = () => {
           {errors.otp && <p className="error-message">{errors.otp}</p>}
 
           <div className="form-group">
-            <label>New Password</label>
-            <input
-              type="password"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              className={errors.password ? "error" : ""}
-              placeholder="Enter your new password"
-            />
-            {errors.password && (
-              <p className="error-message">{errors.password}</p>
-            )}
-          </div>
+        <label>New Password</label>
+        <input
+          type={showNewPassword ? "text" : "password"}
+          value={password}
+          onChange={(e) => setPassword(e.target.value)}
+          className={errors.password ? "error" : ""}
+          placeholder="Enter your new password"
+        />
+        <label style={{ display: "flex", marginTop: "5px",width: "100%",fontSize: "16px"}}>
+          <input
+            type="checkbox"
+            style={{height: "15px",width: "30px"}}
+            onClick={() => setShowNewPassword((prev) => !prev)}
+          />{" "}
+          Show Password
+        </label>
+        {errors.password && (
+          <p className="error-message">{errors.password}</p>
+        )}
+      </div>
 
-          <div className="form-group">
-            <label>Confirm Password</label>
-            <input
-              type="password"
-              value={confirmPassword}
-              onChange={(e) => setConfirmPassword(e.target.value)}
-              className={errors.confirmPassword ? "error" : ""}
-              placeholder="Re-enter your password"
-            />
-            {errors.confirmPassword && (
-              <p className="error-message">{errors.confirmPassword}</p>
-            )}
-          </div>
+      <div className="form-group">
+        <label>Confirm Password</label>
+        <input
+          type={showConfirmPassword ? "text" : "password"}
+          value={confirmPassword}
+          onChange={(e) => setConfirmPassword(e.target.value)}
+          className={errors.confirmPassword ? "error" : ""}
+          placeholder="Re-enter your password"
+        />
+        <label style={{ display: "flex", marginTop: "5px",width: "100%",fontSize: "16px" }}>
+          <input
+            type="checkbox"
+            style={{height: "15px",width: "30px"}}
+            onClick={() => setShowConfirmPassword((prev) => !prev)}
+          />{" "}
+          Show Password
+        </label>
+        {errors.confirmPassword && (
+          <p className="error-message">{errors.confirmPassword}</p>
+        )}
+      </div>
 
           <button type="submit" className="submit-btn" disabled={isLoading}>
             {isLoading ? "Verifying..." : "Verify & Continue"}
