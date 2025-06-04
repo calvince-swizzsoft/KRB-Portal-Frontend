@@ -45,6 +45,7 @@ const UserAuth = () => {
       );
 
       const data = await response.json();
+      
 
 
       if (response.ok) {
@@ -86,6 +87,10 @@ const UserAuth = () => {
       toast.error("An error occurred. Please try again.");
     }
   };
+  const ChangePassword = async (e) => {
+    e.preventDefault();
+    navigate('/change-password')
+  }
   const handleSignup = async (e) => {
     e.preventDefault();
     toast.info("Processing your registration...");
@@ -147,10 +152,6 @@ const UserAuth = () => {
     >
       <ToastContainer
         position="top-right"
-        toastStyle={{
-          backgroundColor: "white",
-          color: "red",
-        }}
       />
       <div className="form-container sign-in-container">
         <form onSubmit={handleLogin} className="userauthform">
@@ -205,7 +206,7 @@ const UserAuth = () => {
               </button>
             </div>
           )}
-          <a href="#">Forgot your password?</a>
+          <a>Forgot your password?</a>
           <button type="submit">Sign In</button>
         </form>
       </div>

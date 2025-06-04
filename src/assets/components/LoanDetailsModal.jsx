@@ -4,6 +4,7 @@ import { toast, ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 import OTPModal from "./OTPModal";
 import axios from "axios";
+import { authorizedFetch } from "../js/authorizedFetch";
 
 function LoanDetailsModal({ loan, onClose }) {
   const [activeTab, setActiveTab] = useState("loan");
@@ -56,8 +57,10 @@ function LoanDetailsModal({ loan, onClose }) {
 
   const fetchActiveMembers = async () => {
     try {
-      const response = await fetch(
-        `${import.meta.env.VITE_API_BASE_URL}/api/active-members/`
+      const response = await authorizedFetch(
+        `/api/active-members/`,{
+          method:'GET'
+        }
       );
       if (!response.ok) throw new Error("Failed to fetch active members");
 
@@ -100,10 +103,10 @@ function LoanDetailsModal({ loan, onClose }) {
     setIsLoadingGuarantors(true);
     try {
       const memberNo = sessionStorage.getItem("memberNo");
-      const response = await fetch(
-        `${
-          import.meta.env.VITE_API_BASE_URL
-        }/api/get-loan-guarantors/?loan_no=${loan.id}&member_number=${memberNo}`
+      const response = await authorizedFetch(
+        `/api/get-loan-guarantors/?loan_no=${loan.id}&member_number=${memberNo}`,{
+          method: 'GET'
+        }
       );
       if (!response.ok) throw new Error("Failed to fetch guarantors");
 
@@ -142,11 +145,10 @@ function LoanDetailsModal({ loan, onClose }) {
         loan_number: loan.id,
       };
 
-      const response = await fetch(
-        `${import.meta.env.VITE_API_BASE_URL}/api/request-guarantorship/`,
+      const response = await authorizedFetch(
+        `/api/request-guarantorship/`,
         {
           method: "POST",
-          headers: { "Content-Type": "application/json" },
           body: JSON.stringify(payload),
         }
       );
@@ -179,11 +181,10 @@ function LoanDetailsModal({ loan, onClose }) {
         guarantorNumber: memberNumber,
       };
 
-      const response = await fetch(
-        `${import.meta.env.VITE_API_BASE_URL}/api/remove-guarantor/`,
+      const response = await authorizedFetch(
+        `/api/remove-guarantor/`,
         {
           method: "POST",
-          headers: { "Content-Type": "application/json" },
           body: JSON.stringify(payload),
         }
       );
@@ -224,11 +225,10 @@ function LoanDetailsModal({ loan, onClose }) {
         repaymentPeriod: editableLoan.installments,
       };
 
-      const response = await fetch(
-        `${import.meta.env.VITE_API_BASE_URL}/api/edit-loan/`,
+      const response = await authorizedFetch(
+        `/api/edit-loan/`,
         {
           method: "POST",
-          headers: { "Content-Type": "application/json" },
           body: JSON.stringify(payload),
         }
       );
@@ -248,11 +248,10 @@ function LoanDetailsModal({ loan, onClose }) {
     }
 
     try {
-      const response = await fetch(
-        `${import.meta.env.VITE_API_BASE_URL}/api/submit-loan/`,
+      const response = await authorizedFetch(
+        `/api/submit-loan/`,
         {
           method: "POST",
-          headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
             memberNumber: memberNo,
             loanNumber: loan.id,

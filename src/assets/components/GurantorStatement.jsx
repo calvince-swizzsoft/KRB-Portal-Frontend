@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import banner from "../img/KRBLogo.png";
 import "../css/GurantorStatement.css";
+import { authorizedFetch } from '../js/authorizedFetch';
 
 function GurantorStatement() {
   const [pdfUrl, setPdfUrl] = useState(null);
@@ -33,13 +34,9 @@ function GurantorStatement() {
         setLoading(true);
         setError(null);
 
-        const response = await fetch(
-          `${API_BASE_URL}/api/loan-guarantors-report/?member_no=${encodeURIComponent(memberNo)}`,
+        const response = await authorizedFetch(`$/api/loan-guarantors-report/?member_no=${memberNo}`,
           {
             method: "GET",
-            headers: {
-              'Content-Type': 'application/json',
-            }
           }
         );
 

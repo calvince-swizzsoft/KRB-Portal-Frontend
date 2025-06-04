@@ -16,6 +16,7 @@ import "../css/Navbar.css";
 import Logo from "../img/KRBLogo.png";
 import { toast, ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
+import { authorizedFetch } from "../js/authorizedFetch";
 
 const Navbar = ({ isOpen, setIsOpen, onLinkClick }) => {
   const [activeMenu, setActiveMenu] = useState("");
@@ -59,16 +60,17 @@ const Navbar = ({ isOpen, setIsOpen, onLinkClick }) => {
     if (!memberNo) return;
 
     try {
-      const response = await fetch(
-        `${import.meta.env.VITE_API_BASE_URL}/api/member-profile?member_no=${(memberNo)}`
+      const response = await authorizedFetch(`/api/member-profile?member_no=${(memberNo)}`,{
+        method: 'GET'
+      }
       );
-      if (!response.ok) throw new Error("Failed to fetch member profile");
+      if (response.status !== 200) throw new Error("Failed to fetch member profile");
 
       const data = await response.json();
       const profile = data.profile;
 
-      setMemberName(profile.FullName);        // From response
-      setMemberNumber(profile.MemberNumber);  // From response
+      setMemberName(profile.profile.FullName);        
+      setMemberNumber(profile.profile.MemberNumber);  
     } catch (error) {
       console.error("Error fetching member profile:", error);
     }

@@ -6,6 +6,7 @@ import axios from "axios";
 import "../css/OnlineLoanApplication.css";
 import KRBLogo from "../img/KRBLogo.png";
 import { Navigate, useNavigate } from "react-router-dom";
+import { authorizedFetch } from "../js/authorizedFetch";
 
 function OnlineLoanApplication() {
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -43,8 +44,10 @@ function OnlineLoanApplication() {
   useEffect(() => {
     const fetchLoanProducts = async () => {
       try {
-        const response = await fetch(
-          `${import.meta.env.VITE_API_BASE_URL}/api/loan-products/`
+        const response = await authorizedFetch(
+          `/api/loan-products/`,{
+            method: 'GET'
+          }
         );
 
         if (!response.ok) throw new Error("Failed to fetch loan products");
@@ -159,11 +162,10 @@ function OnlineLoanApplication() {
 
     setLoanApplicationData(payload);
     try {
-      const loanResponse = await fetch(
-        `${import.meta.env.VITE_API_BASE_URL}/api/apply-loan/`,
+      const loanResponse = await authorizedFetch(
+        `/api/apply-loan/`,
         {
           method: "POST",
-          headers: { "Content-Type": "application/json" },
           body: JSON.stringify(payload),
         }
       );

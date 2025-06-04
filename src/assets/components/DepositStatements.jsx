@@ -34,12 +34,9 @@ function DepositStatements() {
         setError(null);
 
         const response = await fetch(
-          `${API_BASE_URL}/api/member-deposit-report/?member_no=${encodeURIComponent(memberNo)}`,
+          `/api/member-deposit-report/?member_no=${memberNo}`,
           {
             method: "GET",
-            headers: {
-              'Content-Type': 'application/json',
-            }
           }
         );
 

@@ -14,6 +14,7 @@ import {
 } from "react-icons/io5";
 import { FaMoneyBillWave, FaUserTie } from "react-icons/fa";
 import "../css/Dashboard.css";
+import { authorizedFetch } from "../js/authorizedFetch";
 
 function Dashboard() {
   const [memberData, setMemberData] = useState(null);
@@ -21,16 +22,17 @@ function Dashboard() {
   const [error, setError] = useState(null);
 
   const memberNo = sessionStorage.getItem("memberNo");
+  const testtoken = sessionStorage.getItem("token")
 
   useEffect(() => {
     const fetchMemberData = async () => {
       try {
-        const response = await fetch(
-          `${
-            import.meta.env.VITE_API_BASE_URL
-          }/api/member-account-statistics?member_no=${memberNo}`
+        const response = await authorizedFetch(`/api/member-account-statistics?member_no=${memberNo}`,{
+          method: 'GET'
+        }
         );
-        if (!response.ok) {
+        console.log(testtoken)
+        if (response.status !== 200) {
           throw new Error("Failed to fetch member data");
         }
         const data = await response.json();

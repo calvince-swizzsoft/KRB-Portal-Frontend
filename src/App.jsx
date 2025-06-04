@@ -23,7 +23,7 @@ import AppliedLoans from './assets/components/AppliedLoans.jsx';
 import LoanDetailsModal from './assets/components/LoanDetailsModal.jsx'
 import EditProfile from './assets/components/EditProfile.jsx';
 import ShareCertificateStatement from './assets/components/ShareCertificateStatement.jsx';
-import ChangePassword from './assets/components/ChangePassword.jsx';
+import ChangePassword from './assets/pages/ChangePassword.jsx';
 import LoginOtpVerification from './assets/pages/LoginOtpVerification.jsx';
 
 
@@ -68,6 +68,7 @@ const router = createBrowserRouter([
       return null;
     }
   },
+  {path: '/change-password', element: <ChangePassword/>},
   {
     path: "/login-otp-verification",
     element: (
@@ -101,7 +102,7 @@ const router = createBrowserRouter([
       {path: 'guaranteed-statement', element: <GuaranteedStatement />},
       {path: 'share-certificate', element: <ShareCertificateStatement/>},
       {path: 'EditProfile', element: <EditProfile/>},
-      {path: 'change-password', element: <ChangePassword/>},
+      
     ],
   },
 ]);

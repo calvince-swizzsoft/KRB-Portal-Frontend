@@ -14,6 +14,7 @@ import {
   FaChevronRight,
 } from "react-icons/fa";
 import { toast } from "react-toastify";
+import { authorizedFetch } from "../js/authorizedFetch";
 
 function MemberProfile() {
   const [data, setData] = useState(null);
@@ -34,8 +35,9 @@ function MemberProfile() {
           return;
         }
 
-        const response = await fetch(
-          `${import.meta.env.VITE_API_BASE_URL}/api/member-profile?member_no=${memberNo}`
+        const response = await authorizedFetch(`/api/member-profile?member_no=${memberNo}`,{
+          method: 'GET'
+        }
         );
         const result = await response.json();
 

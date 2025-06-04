@@ -3,6 +3,7 @@ import { toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 import KRBLogo from "../img/KRBLogo.png";
 import "../css/LoanBalances.css";
+import { authorizedFetch } from "../js/authorizedFetch";
 
 function LoanBalances() {
   const [loans, setLoans] = useState([]);
@@ -30,10 +31,10 @@ function LoanBalances() {
         throw new Error("Member number not found");
       }
 
-      const response = await fetch(
-        `${
-          import.meta.env.VITE_API_BASE_URL
-        }/api/member-running-loans/?member_no=${memberNo}`
+      const response = await authorizedFetch(
+        `/api/member-running-loans/?member_no=${memberNo}`,{
+          method: 'GET'
+        }
       );
 
       const data = await response.json();

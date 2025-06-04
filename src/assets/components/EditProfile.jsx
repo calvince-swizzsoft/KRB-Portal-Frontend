@@ -7,6 +7,7 @@ import OTPModal from "./OTPModal";
 import axios from "axios";
 import KRBLogo from "../img/KRBLogo.png";
 import "../css/EditProfile.css";
+import { authorizedFetch } from "../js/authorizedFetch";
 
 const EditProfile = () => {
   const [profileImage, setProfileImage] = useState(null);
@@ -130,17 +131,20 @@ const EditProfile = () => {
     const dataToSend = {
       memberNumber,
       fullNames: formData.fullNames,
-      phoneNumber: formData.phoneNumber,
-      email: formData.email,
-      iDNumber: formData.iDNumber,
-      kRAPin: formData.kRAPin,
+      phoneNumber: formData.phoneNumber || "",
+      email: formData.email || "",
+      iDNumber: formData.iDNumber || "",
+      kRAPin: formData.kRAPin || "",
       imageBlob: imageBlob || "",
     };
 
     try {
-      const response = await axios.post(
-        `${import.meta.env.VITE_API_BASE_URL}/api/edit-member-details/`,
-        dataToSend
+      const response = await authorizedFetch(
+        `/api/edit-member-details/`,
+        {
+          method: 'POST',
+          body: JSON.stringify(dataToSend)
+        }
       );
 
       if (response.status === 200) {
@@ -185,34 +189,33 @@ const EditProfile = () => {
         pauseOnHover
       />
 
-     <div className="profile-picture-section">
-  <div className="profile-image-container">
-    {previewImage ? (
-      <>
-        <img src={previewImage} alt="Profile" className="profile-image" />
-        <button
-          className="remove-image-button"
-          onClick={handleRemoveImage}
-        >
-          <FaTimes />
-        </button>
-      </>
-    ) : (
-      <div className="default-profile">👤</div>
-    )}
-    <label className="upload-button" onClick={handleUploadClick}>
-      <FaCamera />
-    </label>
-    <input
-      type="file"
-      ref={fileInputRef}
-      onChange={handleImageChange}
-      accept="image/*"
-      className="hidden-input"
-    />
-  </div>
-</div>
-
+      <div className="profile-picture-section">
+        <div className="profile-image-container">
+          {previewImage ? (
+            <>
+              <img src={previewImage} alt="Profile" className="profile-image" />
+              <button
+                className="remove-image-button"
+                onClick={handleRemoveImage}
+              >
+                <FaTimes />
+              </button>
+            </>
+          ) : (
+            <div className="default-profile">👤</div>
+          )}
+          <label className="upload-button" onClick={handleUploadClick}>
+            <FaCamera />
+          </label>
+          <input
+            type="file"
+            ref={fileInputRef}
+            onChange={handleImageChange}
+            accept="image/*"
+            className="hidden-input"
+          />
+        </div>
+      </div>
 
       <div className="profile-info-section">
         <h2 className="section-title">Profile Information</h2>

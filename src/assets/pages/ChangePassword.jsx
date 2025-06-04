@@ -5,6 +5,7 @@ import 'react-toastify/dist/ReactToastify.css';
 import { FaEye, FaEyeSlash } from 'react-icons/fa';
 import KRBLogo from '../img/KRBLogo.png';
 import '../css/ChangePassword.css';
+import { authorizedFetch } from '../js/authorizedFetch';
 
 function ChangePassword() {
   const navigate = useNavigate();
@@ -75,11 +76,8 @@ function ChangePassword() {
     setIsSubmitting(true);
     
     try {
-      const response = await fetch(`${import.meta.env.VITE_API_BASE_URL}/api/change-password/`, {
+      const response = await authorizedFetch(`/api/change-password/`, {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
         body: JSON.stringify({
           member_no: memberNo,
           current_pass: formData.currentPassword,

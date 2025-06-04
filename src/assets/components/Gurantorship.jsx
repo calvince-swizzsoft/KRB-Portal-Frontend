@@ -3,6 +3,7 @@ import { toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 import KRBLogo from "../img/KRBLogo.png";
 import "../css/Gurantorship.css";
+import { authorizedFetch } from "../js/authorizedFetch";
 
 function Guarantorship() {
   const [requests, setRequests] = useState([]);
@@ -34,10 +35,10 @@ function Guarantorship() {
         throw new Error("Member number not found");
       }
 
-      const response = await fetch(
-        `${
-          import.meta.env.VITE_API_BASE_URL
-        }/api/loans-for-guarantee/?member=${memberNo}`
+      const response = await authorizedFetch(
+        `/api/loans-for-guarantee/?member=${memberNo}`,{
+          method: 'GET'
+        }
       );
 
       const data = await response.json();
@@ -66,13 +67,10 @@ function Guarantorship() {
         throw new Error("Member number not found");
       }
 
-      const response = await fetch(
-        `${import.meta.env.VITE_API_BASE_URL}/api/approve-guarantorship/`,
+      const response = await authorizedFetch(
+        `/api/approve-guarantorship/`,
         {
           method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-          },
           body: JSON.stringify({
             memberNo: memberNo,
             loanNo: loanNo,

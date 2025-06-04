@@ -5,6 +5,7 @@ import LoanDetailsModal from "./LoanDetailsModal.jsx";
 import { toast, ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 import "../css/AppliedLoans.css";
+import { authorizedFetch } from "../js/authorizedFetch.js";
 
 function AppliedLoans() {
   const [loans, setLoans] = useState([]);
@@ -18,10 +19,9 @@ function AppliedLoans() {
   useEffect(() => {
     const fetchLoans = async () => {
       try {
-        const response = await fetch(
-          `${
-            import.meta.env.VITE_API_BASE_URL
-          }/api/applied-loans/?member_no=${memberNo}`
+        const response = await authorizedFetch(`/api/applied-loans/?member_no=${memberNo}`,{
+          method: 'GET'
+        }
         );
         if (!response.ok) throw new Error("Failed to fetch");
 
@@ -64,13 +64,10 @@ function AppliedLoans() {
     if (!confirmDelete) return;
 
     try {
-      const response = await fetch(
-        `${import.meta.env.VITE_API_BASE_URL}/api/delete-loan/`,
+      const response = await authorizedFetch(
+        `/api/delete-loan/`,
         {
           method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-          },
           body: JSON.stringify({
             memberNumber: memberNo,
             loanNumber: loanId,
