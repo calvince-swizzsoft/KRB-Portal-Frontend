@@ -14,7 +14,7 @@ function LoanDetailsModal({ loan, onClose }) {
   const [activeMembers, setActiveMembers] = useState([]);
   const [filteredMembers, setFilteredMembers] = useState([]);
   const [searchQuery, setSearchQuery] = useState("");
-  const memberNo = localStorage.getItem("memberNo");
+  const memberNo = sessionStorage.getItem("memberNo");
   const [editableLoan, setEditableLoan] = useState({
     amount: 0,
     installments: 0,
@@ -99,7 +99,7 @@ function LoanDetailsModal({ loan, onClose }) {
   const fetchGuarantors = async () => {
     setIsLoadingGuarantors(true);
     try {
-      const memberNo = localStorage.getItem("memberNo");
+      const memberNo = sessionStorage.getItem("memberNo");
       const response = await fetch(
         `${
           import.meta.env.VITE_API_BASE_URL
@@ -174,7 +174,7 @@ function LoanDetailsModal({ loan, onClose }) {
   const removeGuarantor = async (memberNumber) => {
     try {
       const payload = {
-        memberNumber: localStorage.getItem("memberNo"),
+        memberNumber: sessionStorage.getItem("memberNo"),
         loanNumber: loan.id,
         guarantorNumber: memberNumber,
       };
@@ -218,7 +218,7 @@ function LoanDetailsModal({ loan, onClose }) {
     try {
       const payload = {
         loanNumber: loan.id,
-        memberNumber: localStorage.getItem("memberNo"),
+        memberNumber: sessionStorage.getItem("memberNo"),
         amountRequest: String(editableLoan.amount),
         loanType: editableLoan.productType,
         repaymentPeriod: editableLoan.installments,

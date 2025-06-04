@@ -28,7 +28,7 @@ function OnlineLoanApplication() {
   const [loanApplicationData, setLoanApplicationData] = useState(null);
   const navigate = useNavigate();
 
-  const memberNo = localStorage.getItem("memberNo");
+  const memberNo = sessionStorage.getItem("memberNo");
 
   useEffect(() => {
     const checkIfMobile = () => {
@@ -156,7 +156,6 @@ function OnlineLoanApplication() {
       loan_purpose: loanPurpose,
       repayment_period: parseInt(repaymentPeriod),
     };
-    console.log(JSON.stringify(payload))
 
     setLoanApplicationData(payload);
     try {

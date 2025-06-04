@@ -46,10 +46,12 @@ const UserAuth = () => {
 
       const data = await response.json();
 
+
       if (response.ok) {
         toast.success("Login successful. Sending OTP...");
-        localStorage.setItem("memberNo", memberNo);
-        localStorage.setItem("token", data.token || "dummy-token");
+        sessionStorage.setItem("memberNo", memberNo);
+        sessionStorage.setItem("token", data.access);
+        sessionStorage.setItem('refresh',data.refresh);
 
         // if the response is ok send the login otp to the logged in user
         const sendotp = await fetch(

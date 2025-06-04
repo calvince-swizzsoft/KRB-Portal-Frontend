@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from "react";
 import KRBLogo from "../img/KRBLogo.png";
-import "../css/MemberProfile.css";
+import { authorizedFetch } from "../js/authorizedFetch";
+import "../css/MemberAccounts.css";
 import {
   FaUser,
   FaEnvelope,
@@ -21,7 +22,9 @@ function MemberAccounts() {
   const [stats, setStats] = useState(null);
   const [loading, setLoading] = useState(true);
 
-  const memberNo = localStorage.getItem("memberNo");
+  const memberNo = sessionStorage.getItem("memberNo");
+  const accesstoken = sessionStorage.getItem("token");
+  const refreshtoken = sessionStorage.getItem("refresh");
 
   useEffect(() => {
     const fetchData = async () => {
@@ -31,24 +34,26 @@ function MemberAccounts() {
           return;
         }
 
-        const profileRes = await fetch(
-          `${
-            import.meta.env.VITE_API_BASE_URL
-          }/api/member-profile?member_no=${memberNo}`
+        const profileRes = await authorizedFetch(
+          `/api/member-profile?member_no=${memberNo}`,
+          {
+            method: "GET",
+          }
         );
         const profileJson = await profileRes.json();
+        console.log(profileJson);
 
-        if (profileJson && profileJson.profile) {
-          setProfile(profileJson.profile);
+        if (profileJson?.profile?.profile) {
+          setProfile(profileJson.profile.profile);
         } else {
           toast.error("Failed to load member profile.");
         }
 
-        // Fetch statistics
-        const statsRes = await fetch(
-          `${
-            import.meta.env.VITE_API_BASE_URL
-          }/api/member-account-statistics?member_no=${memberNo}`
+        const statsRes = await authorizedFetch(
+          `/api/member-account-statistics?member_no=${memberNo}`,
+          {
+            method: "GET",
+          }
         );
         const statsJson = await statsRes.json();
 
@@ -118,11 +123,6 @@ function MemberAccounts() {
               value={profile.FullName || "N/A"}
             />
             <Field
-              icon={<FaEnvelope />}
-              label="Email Address"
-              value={profile.Email || "N/A"}
-            />
-            <Field
               icon={<GrStatusUnknown />}
               label="Account Status"
               value={profile.Status || "N/A"}
@@ -142,23 +142,18 @@ function MemberAccounts() {
             />
             <Field
               icon={<MdCategory />}
-              label="Account Category"
-              value={profile.AccountCategory || "N/A"}
+              label="KRA PIN"
+              value={profile.KRAPin || "N/A"}
             />
             <Field
               icon={<FaWallet />}
-              label="Fosa Account"
-              value={profile.FosaAccount || "N/A"}
+              label="Payroll Number"
+              value={profile.PayrollNumber || "N/A"}
             />
             <Field
               icon={<FaBirthdayCake />}
-              label="Date of Birth"
-              value={formatDate(profile.DateOfBirth)}
-            />
-            <Field
-              icon={<FaVenusMars />}
-              label="Gender"
-              value={profile.Gender || "N/A"}
+              label="Join Date"
+              value={formatDate(profile.JoinDate)}
             />
           </div>
         </div>

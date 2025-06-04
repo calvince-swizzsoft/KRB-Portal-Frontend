@@ -25,7 +25,7 @@ function LoanBalances() {
 
   const fetchLoanBalances = async () => {
     try {
-      const memberNo = localStorage.getItem("memberNo");
+      const memberNo = sessionStorage.getItem("memberNo");
       if (!memberNo) {
         throw new Error("Member number not found");
       }

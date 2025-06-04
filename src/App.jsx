@@ -28,7 +28,7 @@ import LoginOtpVerification from './assets/pages/LoginOtpVerification.jsx';
 
 
 const isSignedUp = () => sessionStorage.getItem('signedup') === 'true';
-const isLoggedIn = () => localStorage.getItem('token');
+const isLoggedIn = () => sessionStorage.getItem('token');
 // const isLoginOtpVerified = () => sessionStorage.getItem('loginOtpVerified') === 'true';
 const isLoginOtpVerified = () => sessionStorage.getItem('loginOtpVerified');
 

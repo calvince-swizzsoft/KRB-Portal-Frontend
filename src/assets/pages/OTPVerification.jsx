@@ -93,8 +93,6 @@ const OTPVerification = () => {
         }
       );
 
-      console.log(response);
-
       if (response.status === 200) {
         toast.success(response.data.message || "Verification successful!");
         sessionStorage.clear()

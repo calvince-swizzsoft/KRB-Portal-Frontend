@@ -37,7 +37,7 @@ const Navbar = ({ isOpen, setIsOpen, onLinkClick }) => {
 
   const navigate = useNavigate();
   const handlelogout = () => {
-    localStorage.clear();
+    sessionStorage.clear();
 
     toast.success("Logging Out", {
       theme: "light",
@@ -55,7 +55,7 @@ const Navbar = ({ isOpen, setIsOpen, onLinkClick }) => {
 
   useEffect(() => {
   const fetchMemberProfile = async () => {
-    const memberNo = localStorage.getItem("memberNo");
+    const memberNo = sessionStorage.getItem("memberNo");
     if (!memberNo) return;
 
     try {

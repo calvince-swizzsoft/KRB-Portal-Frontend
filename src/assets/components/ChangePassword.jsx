@@ -8,7 +8,7 @@ import '../css/ChangePassword.css';
 
 function ChangePassword() {
   const navigate = useNavigate();
-  const memberNo = localStorage.getItem('memberNo');
+  const memberNo = sessionStorage.getItem('memberNo');
   
   const [formData, setFormData] = useState({
     currentPassword: '',

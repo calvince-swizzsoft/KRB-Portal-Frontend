@@ -23,7 +23,7 @@ const EditProfile = () => {
   const [errors, setErrors] = useState({});
   const [isSubmitting, setIsSubmitting] = useState(false);
   const fileInputRef = useRef(null);
-  const memberNumber = localStorage.getItem("memberNo");
+  const memberNumber = sessionStorage.getItem("memberNo");
 
   const ImageChange = (e) => {
     const file = e.target.files[0];

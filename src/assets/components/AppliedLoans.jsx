@@ -13,7 +13,7 @@ function AppliedLoans() {
   const [showModal, setShowModal] = useState(false);
 
   const vite_baseurl = import.meta.env.VITE_BASE_URL;
-  const memberNo = localStorage.getItem("memberNo");
+  const memberNo = sessionStorage.getItem("memberNo");
 
   useEffect(() => {
     const fetchLoans = async () => {

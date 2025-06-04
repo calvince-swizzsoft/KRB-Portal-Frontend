@@ -20,7 +20,7 @@ function Dashboard() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
-  const memberNo = localStorage.getItem("memberNo");
+  const memberNo = sessionStorage.getItem("memberNo");
 
   useEffect(() => {
     const fetchMemberData = async () => {

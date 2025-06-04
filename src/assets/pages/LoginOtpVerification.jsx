@@ -60,8 +60,7 @@ const LoginOtpVerification = () => {
   // Handle form submission
   const handleSubmit = async (e) => {
   e.preventDefault();
-  const member_no = localStorage.getItem("memberNo");
-  console.log(member_no);
+  const member_no = sessionStorage.getItem("memberNo");
 
   if (!validateForm()) return;
 
