@@ -21,6 +21,7 @@ import { authorizedFetch } from "../js/authorizedFetch";
 const Navbar = ({ isOpen, setIsOpen, onLinkClick }) => {
   const [activeMenu, setActiveMenu] = useState("");
   const [isMobile, setIsMobile] = useState(window.innerWidth < 768);
+  const navigate = useNavigate();
 
   useEffect(() => {
     const handleResize = () => setIsMobile(window.innerWidth < 768);
@@ -36,7 +37,22 @@ const Navbar = ({ isOpen, setIsOpen, onLinkClick }) => {
     if (onLinkClick) onLinkClick();
   };
 
-  const navigate = useNavigate();
+  const changepassword = () => {
+    sessionStorage.clear();
+
+    toast.success(
+      "For security purposes, please follow the Sign Up process to change your password.",
+      {
+        theme: "light",
+        autoClose: 4000,
+      }
+    );
+
+    setTimeout(() => {
+      navigate("/");
+    }, 4500);
+  };
+
   const handlelogout = () => {
     sessionStorage.clear();
 
@@ -50,36 +66,36 @@ const Navbar = ({ isOpen, setIsOpen, onLinkClick }) => {
     }, 2000);
   };
 
-
   const [memberName, setMemberName] = useState("");
   const [memberNumber, setMemberNumber] = useState("");
 
   useEffect(() => {
-  const fetchMemberProfile = async () => {
-    const memberNo = sessionStorage.getItem("memberNo");
-    if (!memberNo) return;
+    const fetchMemberProfile = async () => {
+      const memberNo = sessionStorage.getItem("memberNo");
+      if (!memberNo) return;
 
-    try {
-      const response = await authorizedFetch(`/api/member-profile?member_no=${(memberNo)}`,{
-        method: 'GET'
+      try {
+        const response = await authorizedFetch(
+          `/api/member-profile?member_no=${memberNo}`,
+          {
+            method: "GET",
+          }
+        );
+        if (response.status !== 200)
+          throw new Error("Failed to fetch member profile");
+
+        const data = await response.json();
+        const profile = data.profile;
+
+        setMemberName(profile.profile.FullName);
+        setMemberNumber(profile.profile.MemberNumber);
+      } catch (error) {
+        console.error("Error fetching member profile:", error);
       }
-      );
-      if (response.status !== 200) throw new Error("Failed to fetch member profile");
+    };
 
-      const data = await response.json();
-      const profile = data.profile;
-
-      setMemberName(profile.profile.FullName);        
-      setMemberNumber(profile.profile.MemberNumber);  
-    } catch (error) {
-      console.error("Error fetching member profile:", error);
-    }
-  };
-
-  fetchMemberProfile();
-}, []);
-
-
+    fetchMemberProfile();
+  }, []);
 
   const navItems = [
     {
@@ -113,7 +129,7 @@ const Navbar = ({ isOpen, setIsOpen, onLinkClick }) => {
       type: "dropdown",
       links: [
         { to: "/loan-balances", label: "Loan Balances" },
-        { to: "/AppliedLoans", label: "Applied Loans"},
+        { to: "/AppliedLoans", label: "Applied Loans" },
         { to: "/loan-application", label: "Loan Application" },
       ],
     },
@@ -128,7 +144,7 @@ const Navbar = ({ isOpen, setIsOpen, onLinkClick }) => {
         { to: "/deposit-statement", label: "Deposit Statement" },
         { to: "/guarantor-statement", label: "Guarantor Statement" },
         { to: "/guaranteed-statement", label: "Guaranteed Statement" },
-        { to: "/share-certificate", label: "Share Certificate"}
+        { to: "/share-certificate", label: "Share Certificate" },
       ],
     },
   ];
@@ -217,14 +233,13 @@ const Navbar = ({ isOpen, setIsOpen, onLinkClick }) => {
         </div>
 
         <div className="footer-actions">
-          <Link
-            to="change-password"
-            className="action-button help-button"
-            onClick={handleNavLinkClick}
+          <button
+            className="action-button logout-button"
+            onClick={changepassword}
           >
             <FiHelpCircle className="action-icon" />
             <span>Change Password</span>
-          </Link>
+          </button>
           <button
             className="action-button logout-button"
             onClick={handlelogout}

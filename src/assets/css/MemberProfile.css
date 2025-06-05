@@ -16,13 +16,6 @@
   padding: 0;
 }
 
-body {
-  font-family: 'Segoe UI', 'Roboto', sans-serif;
-  line-height: 1.6;
-  color: var(--text-color);
-  background-color: #f5f7fa;
-}
-
 /* Loading and Error States */
 .loading-container,
 .error-container {
@@ -32,6 +25,7 @@ body {
   justify-content: center;
   height: 100vh;
   text-align: center;
+  margin-top: 20px;
 }
 
 .loading-spinner {
@@ -88,7 +82,7 @@ body {
   position: relative;
   display: inline-block;
   padding: 0;
-  margin: 0;
+  margin-bottom: 1em;
 }
 
 .profile-title-memberprofile::after {
@@ -151,46 +145,54 @@ body {
 }
 
 .profile-meta {
-  width: 100%;
-  text-align: left;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 1rem;
+  background-color: #fff;
+  padding: 1rem 1.5rem;
+  border-radius: 12px;
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.08);
+  font-family: 'Segoe UI', sans-serif;
+  font-size: 16px;
+  color: #333;
 }
 
-.member-name {
-  font-size: 1.5rem;
+.member-name-line {
   font-weight: 600;
-  margin-bottom: 0.5rem;
-  width: 100%;
-  color: var(--text-color);
+  color: #1f2937;
+  white-space: nowrap;
 }
 
 .member-status {
-  display: inline-block;
   padding: 0.25rem 0.75rem;
-  border-radius: 20px;
-  font-size: 0.85rem;
-  font-weight: 600;
-  margin-bottom: 0.75rem;
+  border-radius: 9999px;
+  font-weight: 500;
+  text-transform: capitalize;
+  font-size: 14px;
 }
 
 .member-status.active {
-  background-color: #e6f7ee;
-  color: #28a745;
+  background-color: #d1fae5;
+  color: #065f46;
 }
 
 .member-status.inactive {
-  background-color: #fce8e6;
-  color: #dc3545;
+  background-color: #fee2e2;
+  color: #991b1b;
+}
+
+.member-status.pending {
+  background-color: #fef9c3;
+  color: #92400e;
 }
 
 .member-number {
-  font-size: 0.95rem;
-  color: var(--light-text);
+  white-space: nowrap;
+  font-weight: 500;
+  color: #4b5563;
 }
 
-.member-number span {
-  font-weight: 500;
-  color: var(--text-color);
-}
 
 /* Profile Sections */
 .profile-sections {

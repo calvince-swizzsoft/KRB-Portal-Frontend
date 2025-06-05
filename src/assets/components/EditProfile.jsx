@@ -26,18 +26,6 @@ const EditProfile = () => {
   const fileInputRef = useRef(null);
   const memberNumber = sessionStorage.getItem("memberNo");
 
-  const ImageChange = (e) => {
-    const file = e.target.files[0];
-    if (file) {
-      setProfileImage(file);
-      const reader = new FileReader();
-      reader.onloadend = () => {
-        setPreviewImage(reader.result);
-      };
-      reader.readAsDataURL(file);
-    }
-  };
-
   const handleRemoveImage = () => {
     setProfileImage(null);
     setPreviewImage(null);
@@ -56,7 +44,7 @@ const EditProfile = () => {
       ...formData,
       [name]: value,
     });
-    // Clear error when user types
+
     if (errors[name]) {
       setErrors({
         ...errors,
@@ -130,7 +118,7 @@ const EditProfile = () => {
   const submitProfile = async (imageBlob) => {
     const dataToSend = {
       memberNumber,
-      fullNames: formData.fullNames,
+      fullNames: sessionStorage.getItem('fullName'),
       phoneNumber: formData.phoneNumber || "",
       email: formData.email || "",
       iDNumber: formData.iDNumber || "",
@@ -210,7 +198,6 @@ const EditProfile = () => {
           <input
             type="file"
             ref={fileInputRef}
-            onChange={handleImageChange}
             accept="image/*"
             className="hidden-input"
           />
@@ -226,7 +213,7 @@ const EditProfile = () => {
               type="text"
               id="fullNames"
               name="fullNames"
-              value={formData.fullNames}
+              value={sessionStorage.getItem("fullName")}
               onChange={handleInputChange}
               placeholder="Enter your full names"
               className={`form-input ${errors.fullNames ? "error" : ""}`}

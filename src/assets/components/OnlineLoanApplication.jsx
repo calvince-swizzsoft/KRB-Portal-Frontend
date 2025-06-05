@@ -1,8 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { toast, ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
-import OTPModal from "./OTPModal";
-import axios from "axios";
 import "../css/OnlineLoanApplication.css";
 import KRBLogo from "../img/KRBLogo.png";
 import { Navigate, useNavigate } from "react-router-dom";

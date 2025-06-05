@@ -11,32 +11,54 @@ import {
   IoIdCardOutline,
   IoBusinessOutline,
   IoNotificationsOutline,
+  IoCallOutline,
+  IoLogoWhatsapp,
+  IoMailOutline,
 } from "react-icons/io5";
 import { FaMoneyBillWave, FaUserTie } from "react-icons/fa";
 import "../css/Dashboard.css";
 import { authorizedFetch } from "../js/authorizedFetch";
+import { FiHelpCircle, FiX } from "react-icons/fi";
 
 function Dashboard() {
   const [memberData, setMemberData] = useState(null);
+  const [deductionsData, setDeductionsData] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [isHelpOpen, setHelpOpen] = useState(false);
 
   const memberNo = sessionStorage.getItem("memberNo");
-  const testtoken = sessionStorage.getItem("token")
+  const testtoken = sessionStorage.getItem("token");
 
   useEffect(() => {
-    const fetchMemberData = async () => {
+    const fetchData = async () => {
       try {
-        const response = await authorizedFetch(`/api/member-account-statistics?member_no=${memberNo}`,{
-          method: 'GET'
-        }
+        setLoading(true);
+
+        // Fetch member account statistics
+        const statsResponse = await authorizedFetch(
+          `/api/member-account-statistics?member_no=${memberNo}`,
+          {
+            method: "GET",
+          }
         );
-        console.log(testtoken)
-        if (response.status !== 200) {
+
+        if (statsResponse.status !== 200) {
           throw new Error("Failed to fetch member data");
         }
-        const data = await response.json();
-        setMemberData(data);
+        const statsData = await statsResponse.json();
+        setMemberData(statsData);
+
+        // Fetch monthly deductions
+        const deductionsResponse = await authorizedFetch(
+          `/api/monthly-deductions/?memberNumber=${memberNo}`,
+          { method: "GET" }
+        );
+        if (deductionsResponse.status !== 200) {
+          throw new Error("Failed to fetch deductions data");
+        }
+        const deductionsData = await deductionsResponse.json();
+        setDeductionsData(deductionsData.data);
       } catch (err) {
         setError(err.message);
       } finally {
@@ -44,12 +66,11 @@ function Dashboard() {
       }
     };
 
-    fetchMemberData();
-  }, []);
+    fetchData();
+  }, [memberNo]);
 
   const formatCurrency = (value) => {
     if (!value) return "0.00";
-    // Remove commas if present and parse to number
     const num =
       typeof value === "string" ? parseFloat(value.replace(/,/g, "")) : value;
     return num.toLocaleString("en-KE", {
@@ -80,37 +101,41 @@ function Dashboard() {
       color: "#ef4444",
     },
     {
-      label: "Junior Savings",
-      value: memberData ? formatCurrency(memberData.JuniorSavings) : "0.00",
-      icon: <IoPersonOutline size={24} />,
+      label: "Monthly Contribution",
+      value: deductionsData?.contributions
+        ? formatCurrency(deductionsData.contributions.monthlyContribution)
+        : "0.00",
+      icon: <IoPeopleOutline size={24} />,
+      color: "#8b5cf6",
+    },
+    {
+      label: "Total Loan Repayments",
+      value: deductionsData?.summary
+        ? formatCurrency(deductionsData.summary.totalLoanRepayments)
+        : "0.00",
+      icon: <IoTrendingDownOutline size={24} />,
       color: "#f59e0b",
     },
     {
-      label: "Withdrawable Savings",
-      value: memberData
-        ? formatCurrency(memberData.WithdrawableSavings)
+      label: "Total Monthly Deductions",
+      value: deductionsData?.summary
+        ? formatCurrency(deductionsData.summary.totalMonthlyDeductions)
         : "0.00",
-      icon: <IoStatsChartOutline size={24} />,
-      color: "#8b5cf6",
-    },
-    // {
-    //   label: "Outstanding Interest",
-    //   value: memberData ? formatCurrency(memberData.OutstandingInterest) : "0.00",
-    //   icon: <IoTrendingDownOutline size={24} />,
-    //   color: "#ec4899",
-    // },
-    {
-      label: "Total Arrears",
-      value: memberData ? formatCurrency(memberData.TotalArrears) : "0.00",
       icon: <IoGiftOutline size={24} />,
       color: "#14b8a6",
     },
-    // {
-    //   label: "Payroll Number",
-    //   value: memberData ? memberData["Payroll No"] : "N/A",
-    //   icon: <IoIdCardOutline size={24} />,
-    //   color: "#f97316",
-    // },
+    {
+      label: "Junior Savings",
+      value: memberData ? formatCurrency(memberData.JuniorSavings) : "0.00",
+      icon: <IoPersonOutline size={24} />,
+      color: "#ec4899",
+    },
+    {
+      label: "Total Arrears",
+      value: memberData ? formatCurrency(memberData.TotalArrears) : "0.00",
+      icon: <IoIdCardOutline size={24} />,
+      color: "#f97316",
+    },
   ];
 
   const newsItems = [
@@ -139,17 +164,48 @@ function Dashboard() {
   }
 
   return (
-    <div className="dashboard">
-      {/* Header Section */}
-      <div className="header-section">
-        <div className="logo-container">
-          <img src={KRBLogo} alt="KRB Logo" className="krb-logo" />
-          <div className="sacco-name">Kenya Road Board Sacco</div>
+    <div className="dashboard-container">
+      {/* Help Drawer - Redesigned */}
+      <div className={`help-drawer ${isHelpOpen ? "open" : ""}`}>
+        <button className="close-drawer" onClick={() => setHelpOpen(false)}>
+          <FiX size={20} />
+        </button>
+        <h3>Quick Help</h3>
+        <div className="help-options">
+          <a
+            href="https://wa.me/254712345678"
+            target="_blank"
+            rel="noreferrer"
+            className="help-option"
+          >
+            <IoLogoWhatsapp size={24} />
+            <span>WhatsApp Support</span>
+          </a>
+          <a href="tel:+254711123456" className="help-option">
+            <IoCallOutline size={24} />
+            <span>Call Support</span>
+          </a>
+          <a href="mailto:support@krbsacco.co.ke" className="help-option">
+            <IoMailOutline size={24} />
+            <span>Email Support</span>
+          </a>
         </div>
-        <h1 className="page-title">Dashboard</h1>
       </div>
 
-      {/* Stats Grid */}
+      <div className="help-icon" onClick={() => setHelpOpen(true)}>
+        <FiHelpCircle size={24} />
+      </div>
+
+      {/* Header */}
+      <header className="dashboard-header">
+        <div className="logo-title">
+          <img src={KRBLogo} alt="KRB Logo" className="logo" />
+          <span>Kenya Road Board SACCO</span>
+        </div>
+        <h1 className="title">Dashboard</h1>
+      </header>
+
+      {/* Statistics */}
       <section className="stats-grid">
         {items.map((item, index) => (
           <div
@@ -171,44 +227,72 @@ function Dashboard() {
                   : `Ksh ${item.value}`}
               </p>
             </div>
-            <div className="card-wave"></div>
           </div>
         ))}
       </section>
 
-      {/* Dependents Section */}
-      {/* {memberData?.Dependents && memberData.Dependents.length > 0 && (
-        <section className="stats-grid">
-          
-          <div className="stat-card">
-            <div className="">
+      {/* Loan Deductions Details */}
+      {deductionsData && (
+        <section className="deductions-section">
+          <div className="deductions-header">
+            <IoCardOutline size={20} />
+            <h3>Monthly Deductions Summary</h3>
+          </div>
+
+          <div className="deductions-cards">
+            <div className="deduction-card">
+              <p>
+                <strong>Contribution:</strong> Ksh{" "}
+                {deductionsData.contributions?.monthlyContribution || "0.00"}
+              </p>
+              <p>
+                <strong>Loan Repayments:</strong> Ksh{" "}
+                {deductionsData.summary?.totalLoanRepayments || "0.00"}
+              </p>
+              <p>
+                <strong>Total Deductions:</strong> Ksh{" "}
+                {deductionsData.summary?.totalMonthlyDeductions || "0.00"}
+              </p>
+            </div>
+
+           
+          </div>
+        </section>
+      )}
+
+      {/* Dependents */}
+      {memberData?.Dependents?.length > 0 && (
+        <section className="dependents-section">
+          <div className="dependents-header">
             <FaUserTie size={20} />
             <h3>Dependents</h3>
           </div>
+          <div className="dependents-list">
             {memberData.Dependents.map((dependent, index) => (
               <div className="dependent-card" key={index}>
-                <div className="dependent-info">
-                  <p><strong>Dependent No:</strong> {dependent.DependentNo}</p>
-                  <p><strong>Name:</strong> {dependent.DependentName}</p>
-                </div>
+                <p>
+                  <strong>No:</strong> {dependent.DependentNo}
+                </p>
+                <p>
+                  <strong>Name:</strong> {dependent.DependentName}
+                </p>
               </div>
             ))}
           </div>
         </section>
-      )} */}
+      )}
 
       {/* Bottom Section */}
-      <section className="dashboard-bottom">
-        {/* SACCO Forms Card */}
+      <section className="bottom-section">
         <div className="forms-card">
           <div className="card-header">
             <IoBusinessOutline size={20} />
-            <h3>Download SACCO Forms</h3>
+            <h3>SACCO Forms</h3>
           </div>
-          <ul className="forms-list">
+          <ul>
             {saccoForms.map((form, index) => (
               <li key={index}>
-                <a href={form.link} download target="_blank" rel="noreferrer">
+                <a href={form.link} target="_blank" rel="noreferrer" download>
                   {form.name}
                 </a>
               </li>
@@ -216,21 +300,18 @@ function Dashboard() {
           </ul>
         </div>
 
-        {/* News Card */}
         <div className="news-card">
           <div className="card-header">
             <IoNotificationsOutline size={20} />
-            <h3>Latest Updates</h3>
+            <h3>Latest News</h3>
             <span className="view-all">View All</span>
           </div>
-          <div className="news-scroll-container">
-            <div className="news-list">
-              {newsItems.map((item, index) => (
-                <div className="news-item" key={index}>
-                  <p>{item}</p>
-                </div>
-              ))}
-            </div>
+          <div className="news-list">
+            {newsItems.map((item, index) => (
+              <div className="news-item" key={index}>
+                <p>{item}</p>
+              </div>
+            ))}
           </div>
         </div>
       </section>

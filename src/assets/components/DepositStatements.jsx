@@ -9,7 +9,6 @@ function DepositStatements() {
   const [isMobile, setIsMobile] = useState(false);
 
   const memberNo = sessionStorage.getItem("memberNo");
-  const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
 
   useEffect(() => {
     const checkIfMobile = () => {

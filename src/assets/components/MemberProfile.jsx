@@ -22,6 +22,9 @@ function MemberProfile() {
   const navigate = useNavigate();
 
   const UpdateProfile = () => {
+    if (data?.FullName) {
+      sessionStorage.setItem("fullName", data.FullName);
+    }
     navigate("/Home/EditProfile");
   };
 
@@ -35,14 +38,18 @@ function MemberProfile() {
           return;
         }
 
-        const response = await authorizedFetch(`/api/member-profile?member_no=${memberNo}`,{
-          method: 'GET'
-        }
+        const response = await authorizedFetch(
+          `/api/member-profile?member_no=${memberNo}`,
+          {
+            method: "GET",
+          }
         );
         const result = await response.json();
+        console.log(result);
 
         if (result?.profile?.status === "success") {
           setData(result.profile.profile);
+          console.log(data);
         } else {
           toast.error("Failed to load member profile.");
         }
@@ -87,7 +94,9 @@ function MemberProfile() {
               )}
             </div>
             <div className="profile-meta">
-              <h3 className="member-name">{data.FullName || "N/A"}</h3>
+              <div className="member-name-line">
+                <span className="member-value">{data.FullName || "N/A"}</span>
+              </div>
               <div className={`member-status ${data.Status?.toLowerCase()}`}>
                 {data.Status || "N/A"}
               </div>
@@ -121,6 +130,25 @@ function MemberProfile() {
                   label="Join Date"
                   value={data.JoinDate || "N/A"}
                 />
+                {Array.isArray(data.next_of_kin) &&
+                data.next_of_kin.length > 0 ? (
+                  data.next_of_kin.map((kin, index) => (
+                    <ProfileField
+                      key={index}
+                      icon={<FaUser />}
+                      label={`Next of Kin ${index + 1}`}
+                      value={`${kin.FullName || "N/A"} (${
+                        kin.Relationship || "N/A"
+                      }) - ${kin.Phone || "N/A"}`}
+                    />
+                  ))
+                ) : (
+                  <ProfileField
+                    icon={<FaUser />}
+                    label="Next of Kin"
+                    value="N/A"
+                  />
+                )}
               </div>
             </section>
 
