@@ -76,9 +76,9 @@ function LoanBalances() {
       </div>
 
       {loading ? (
-        <div className="loading-spinner">
+        <div className="loading-state">
           <div className="spinner"></div>
-          <p>Loading loan balances...</p>
+          <p>Loading your loan applications...</p>
         </div>
       ) : filteredLoans.length === 0 ? (
         <div className="no-loans">

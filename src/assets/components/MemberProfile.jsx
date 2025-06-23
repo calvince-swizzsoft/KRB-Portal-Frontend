@@ -7,17 +7,20 @@ import {
   FaUser,
   FaPhone,
   FaIdCard,
-  FaUserCheck,
   FaWallet,
   FaCalendarAlt,
   FaPencilAlt,
   FaChevronRight,
+  FaEnvelope,
+  FaMapMarkerAlt,
+  FaBuilding,
 } from "react-icons/fa";
 import { toast } from "react-toastify";
 import { authorizedFetch } from "../js/authorizedFetch";
 
 function MemberProfile() {
   const [data, setData] = useState(null);
+  const [nextOfKin, setNextOfKin] = useState([]);
   const [loading, setLoading] = useState(true);
   const navigate = useNavigate();
 
@@ -39,17 +42,16 @@ function MemberProfile() {
         }
 
         const response = await authorizedFetch(
-          `/api/member-profile?member_no=${memberNo}`,
+          `/api/member-profile/?member_no=${memberNo}`,
           {
             method: "GET",
           }
         );
         const result = await response.json();
-        console.log(result);
 
         if (result?.profile?.status === "success") {
           setData(result.profile.profile);
-          console.log(data);
+          setNextOfKin(result.next_of_kin || []);
         } else {
           toast.error("Failed to load member profile.");
         }
@@ -66,135 +68,146 @@ function MemberProfile() {
 
   if (loading)
     return (
-      <div className="loading-container">
+      <div className="profile-loading">
         <div className="loading-spinner"></div>
-        <p>Loading your profile...</p>
+        <p>Loading profile data...</p>
       </div>
     );
+
   if (!data)
-    return <div className="error-container">No profile data available.</div>;
+    return (
+      <div className="profile-error">
+        <p>No profile data available</p>
+      </div>
+    );
 
   return (
-    <div className="member-profile-container">
-      <main className="profile-main">
-        <div className="profile-card">
-          <div className="profile-title-memberprofile">Member Profile</div>
-          <div className="profile-header-section">
-            <div className="avatar-container">
-              {data.ImageBase64 ? (
-                <img
-                  src={`data:image/png;base64,${data.ImageBase64}`}
-                  alt="Member"
-                  className="member-avatar"
-                />
-              ) : (
-                <div className="avatar-placeholder">
-                  <FaUser size={32} />
-                </div>
-              )}
-            </div>
-            <div className="profile-meta">
-              <div className="member-name-line">
-                <span className="member-value">{data.FullName || "N/A"}</span>
-              </div>
-              <div className={`member-status ${data.Status?.toLowerCase()}`}>
-                {data.Status || "N/A"}
-              </div>
-              <div className="member-number">
-                <span>Member #:</span> {data.MemberNumber || "N/A"}
-              </div>
-            </div>
-          </div>
-
-          {/* Profile Details Sections */}
-          <div className="profile-sections">
-            {/* Personal Information Section */}
-            <section className="profile-section">
-              <div className="section-header">
-                <h4>Personal Information</h4>
-                <div className="section-divider"></div>
-              </div>
-              <div className="section-content">
-                <ProfileField
-                  icon={<FaIdCard />}
-                  label="ID Number"
-                  value={data.IDNumber || "N/A"}
-                />
-                <ProfileField
-                  icon={<FaPhone />}
-                  label="Phone"
-                  value={data.Phone || "N/A"}
-                />
-                <ProfileField
-                  icon={<FaCalendarAlt />}
-                  label="Join Date"
-                  value={data.JoinDate || "N/A"}
-                />
-                {Array.isArray(data.next_of_kin) &&
-                data.next_of_kin.length > 0 ? (
-                  data.next_of_kin.map((kin, index) => (
-                    <ProfileField
-                      key={index}
-                      icon={<FaUser />}
-                      label={`Next of Kin ${index + 1}`}
-                      value={`${kin.FullName || "N/A"} (${
-                        kin.Relationship || "N/A"
-                      }) - ${kin.Phone || "N/A"}`}
-                    />
-                  ))
-                ) : (
-                  <ProfileField
-                    icon={<FaUser />}
-                    label="Next of Kin"
-                    value="N/A"
-                  />
-                )}
-              </div>
-            </section>
-
-            {/* Employment Details Section */}
-            <section className="profile-section">
-              <div className="section-header">
-                <h4>Employment Details</h4>
-                <div className="section-divider"></div>
-              </div>
-              <div className="section-content">
-                <ProfileField
-                  icon={<FaWallet />}
-                  label="Payroll Number"
-                  value={data.PayrollNumber || "N/A"}
-                />
-                <ProfileField
-                  icon={<FaIdCard />}
-                  label="KRA PIN"
-                  value={data.KRAPin || "N/A"}
-                />
-              </div>
-            </section>
-          </div>
-
-          {/* Action Button */}
-          <button className="update-button" onClick={UpdateProfile}>
-            <FaPencilAlt className="button-icon" />
-            Update Profile
-            <FaChevronRight className="button-arrow" />
+    <div className="krb-profile-container">
+      {/* Profile Header */}
+      <div className="profile-header">
+        <div className="header-content">
+          <h1>Member Profile</h1>
+          <button className="edit-btn" onClick={UpdateProfile}>
+            <FaPencilAlt /> Edit Profile
           </button>
         </div>
-      </main>
-    </div>
-  );
-}
+      </div>
 
-function ProfileField({ icon, label, value }) {
-  return (
-    <div className="profile-field">
-      <div className="field-icon">{icon}</div>
-      <div className="field-content">
-        <div className="field-label">{label}</div>
-        <div className="field-value">{value}</div>
+      {/* Main Profile Card */}
+      <div className="profile-card">
+        {/* Profile Summary */}
+        <div className="profile-summary">
+          <div className="avatar-section">
+            {data.ImageBase64 ? (
+              <img
+                src={`data:image/png;base64,${data.ImageBase64}`}
+                alt="Member"
+                className="member-avatar"
+              />
+            ) : (
+              <div className="avatar-placeholder">
+                <FaUser size={32} />
+              </div>
+            )}
+          </div>
+
+          <div className="member-info">
+            <h2>{data.FullName || "N/A"}</h2>
+            <div className={`status-badge ${data.Status?.toLowerCase()}`}>
+              {data.Status || "N/A"}
+            </div>
+            <p className="member-number">
+              Member #: {data.MemberNumber || "N/A"}
+            </p>
+          </div>
+        </div>
+
+        {/* Profile Details Grid */}
+        <div className="profile-grid">
+          {/* Personal Information */}
+          <div className="profile-section">
+            <h3 className="section-title">
+              <FaUser className="section-icon" /> Personal Information
+            </h3>
+            <div className="section-content">
+              <DetailRow
+                icon={<FaIdCard />}
+                label="ID Number"
+                value={data.IDNumber}
+              />
+              <DetailRow icon={<FaPhone />} label="Phone" value={data.Phone} />
+              <DetailRow
+                icon={<FaEnvelope />}
+                label="Email"
+                value={data.Email}
+              />
+              <DetailRow
+                icon={<FaCalendarAlt />}
+                label="Join Date"
+                value={data.JoinDate}
+              />
+            </div>
+          </div>
+
+          {/* Employment Details */}
+          <div className="profile-section">
+            <h3 className="section-title">
+              <FaBuilding className="section-icon" /> Employment Details
+            </h3>
+            <div className="section-content">
+              <DetailRow
+                icon={<FaWallet />}
+                label="Payroll Number"
+                value={data.PayrollNumber}
+              />
+              <DetailRow
+                icon={<FaIdCard />}
+                label="KRA PIN"
+                value={data.KRAPin}
+              />
+              <DetailRow
+                icon={<FaWallet />}
+                label="NHIF NO"
+                value={data.NHIFNumber || "NULL"}
+              />
+            </div>
+            
+          </div>
+
+          {/* Next of Kin */}
+          {nextOfKin.length > 0 && (
+            <div className="profile-section">
+              <h3 className="section-title">
+                <FaUser className="section-icon" /> Next of Kin
+              </h3>
+              <div className="section-content">
+                {nextOfKin.map((kin, index) => (
+                  <React.Fragment key={index}>
+                    <DetailRow label="Name" value={kin.FullName} />
+                    <DetailRow label="Relationship" value={kin.Relationship} />
+                    <DetailRow label="Phone" value={kin.Phone} />
+                    {index < nextOfKin.length - 1 && (
+                      <hr className="kin-divider" />
+                    )}
+                  </React.Fragment>
+                ))}
+              </div>
+            </div>
+          )}
+        </div>
       </div>
     </div>
   );
 }
+
+const DetailRow = ({ icon, label, value }) => (
+  <div className="detail-row">
+    <div className="detail-label">
+      {icon && <span className="detail-icon">{icon}</span>}
+      {label}
+    </div>
+    <div className="detail-value">{value || "N/A"}</div>
+  </div>
+);
 
 export default MemberProfile;

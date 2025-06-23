@@ -15,20 +15,28 @@ import {
   IoLogoWhatsapp,
   IoMailOutline,
 } from "react-icons/io5";
+import { IoIosNotifications } from "react-icons/io";
 import { FaMoneyBillWave, FaUserTie } from "react-icons/fa";
 import "../css/Dashboard.css";
 import { authorizedFetch } from "../js/authorizedFetch";
-import { FiHelpCircle, FiX } from "react-icons/fi";
+import { Link } from "react-router-dom";
+
+import {
+  FaWhatsapp,
+  FaPhone,
+  FaEnvelope,
+  FaQuestionCircle,
+} from "react-icons/fa";
 
 function Dashboard() {
   const [memberData, setMemberData] = useState(null);
   const [deductionsData, setDeductionsData] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
-  const [isHelpOpen, setHelpOpen] = useState(false);
+  const [isDrawerOpen, setIsDrawerOpen] = useState(false);
+  const [requests, setRequests] = useState();
 
   const memberNo = sessionStorage.getItem("memberNo");
-  const testtoken = sessionStorage.getItem("token");
 
   useEffect(() => {
     const fetchData = async () => {
@@ -37,7 +45,7 @@ function Dashboard() {
 
         // Fetch member account statistics
         const statsResponse = await authorizedFetch(
-          `/api/member-account-statistics?member_no=${memberNo}`,
+          `/api/member-account-statistics/?member_no=${memberNo}`,
           {
             method: "GET",
           }
@@ -78,6 +86,39 @@ function Dashboard() {
       maximumFractionDigits: 2,
     });
   };
+
+  useEffect(() => {
+    const fetchGuarantorRequests = async () => {
+      try {
+        const memberNo = sessionStorage.getItem("memberNo");
+        if (!memberNo) {
+          throw new Error("Member number not found");
+        }
+
+        const response = await authorizedFetch(
+          `/api/loans-for-guarantee/?member=${memberNo}`,
+          {
+            method: "GET",
+          }
+        );
+
+        const data = await response.json();
+        console.log("Guarantor Request Data:", data);
+
+        if (data?.count !== undefined) {
+          setRequests(data.count);
+        } else {
+          throw new Error("Unexpected API format");
+        }
+      } catch (error) {
+        console.error("Failed to fetch requests", error.message);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchGuarantorRequests();
+  }, []);
 
   const items = [
     {
@@ -165,35 +206,34 @@ function Dashboard() {
 
   return (
     <div className="dashboard-container">
-      {/* Help Drawer - Redesigned */}
-      <div className={`help-drawer ${isHelpOpen ? "open" : ""}`}>
-        <button className="close-drawer" onClick={() => setHelpOpen(false)}>
-          <FiX size={20} />
-        </button>
-        <h3>Quick Help</h3>
-        <div className="help-options">
+      <div className="support-container">
+        <div className={`support-drawer ${isDrawerOpen ? "open" : ""}`}>
           <a
-            href="https://wa.me/254712345678"
+            href="https://wa.me/254706126213"
             target="_blank"
-            rel="noreferrer"
-            className="help-option"
+            rel="noopener noreferrer"
+            className="support-icon whatsapp"
           >
-            <IoLogoWhatsapp size={24} />
-            <span>WhatsApp Support</span>
+            <FaWhatsapp />
           </a>
-          <a href="tel:+254711123456" className="help-option">
-            <IoCallOutline size={24} />
-            <span>Call Support</span>
+          <a href="tel:+254706126213" className="support-icon phone">
+            <FaPhone />
           </a>
-          <a href="mailto:support@krbsacco.co.ke" className="help-option">
-            <IoMailOutline size={24} />
-            <span>Email Support</span>
+          <a
+            href="mailto:support@krbsacco.co.ke"
+            className="support-icon email"
+          >
+            <FaEnvelope />
           </a>
         </div>
-      </div>
 
-      <div className="help-icon" onClick={() => setHelpOpen(true)}>
-        <FiHelpCircle size={24} />
+        <div
+          className="support-button"
+          onClick={() => setIsDrawerOpen((prev) => !prev)}
+        >
+          <FaQuestionCircle />
+          <span className="tooltip">Technical Support</span>
+        </div>
       </div>
 
       {/* Header */}
@@ -202,7 +242,26 @@ function Dashboard() {
           <img src={KRBLogo} alt="KRB Logo" className="logo" />
           <span>Kenya Road Board SACCO</span>
         </div>
-        <h1 className="title">Dashboard</h1>
+        <div className="right">
+          <div className="usersection">
+            {/* <img
+              src={KRBLogo}
+              alt="User Logo"
+              className="user-profile-picture"
+            />
+            <small className="users-name">
+              {sessionStorage.getItem("fullName")}
+            </small> */}
+            <div style={{ position: "relative" }}>
+              <Link to="/Home/guarantor-request">
+                <IoIosNotifications style={{ cursor: "pointer" }} />
+                {requests > 0 && (
+                  <span className="notification-badge">{requests}</span>
+                )}
+              </Link>
+            </div>
+          </div>
+        </div>
       </header>
 
       {/* Statistics */}
@@ -231,16 +290,16 @@ function Dashboard() {
         ))}
       </section>
 
-      {/* Loan Deductions Details */}
-      {deductionsData && (
-        <section className="deductions-section">
-          <div className="deductions-header">
-            <IoCardOutline size={20} />
-            <h3>Monthly Deductions Summary</h3>
-          </div>
+      <div className="dashboard-row">
+        {/* Loan Deductions Details */}
+        {deductionsData && (
+          <section className="dashboard-card">
+            <div className="dashboard-card-header">
+              <IoCardOutline size={20} />
+              <h3>Monthly Deductions Summary</h3>
+            </div>
 
-          <div className="deductions-cards">
-            <div className="deduction-card">
+            <div className="dashboard-card-body">
               <p>
                 <strong>Contribution:</strong> Ksh{" "}
                 {deductionsData.contributions?.monthlyContribution || "0.00"}
@@ -254,33 +313,32 @@ function Dashboard() {
                 {deductionsData.summary?.totalMonthlyDeductions || "0.00"}
               </p>
             </div>
+          </section>
+        )}
 
-           
-          </div>
-        </section>
-      )}
+        {/* Dependents */}
+        {memberData?.Dependents?.length > 0 && (
+          <section className="dashboard-card">
+            <div className="dashboard-card-header">
+              <FaUserTie size={20} />
+              <h3>Dependents</h3>
+            </div>
 
-      {/* Dependents */}
-      {memberData?.Dependents?.length > 0 && (
-        <section className="dependents-section">
-          <div className="dependents-header">
-            <FaUserTie size={20} />
-            <h3>Dependents</h3>
-          </div>
-          <div className="dependents-list">
-            {memberData.Dependents.map((dependent, index) => (
-              <div className="dependent-card" key={index}>
-                <p>
-                  <strong>No:</strong> {dependent.DependentNo}
-                </p>
-                <p>
-                  <strong>Name:</strong> {dependent.DependentName}
-                </p>
-              </div>
-            ))}
-          </div>
-        </section>
-      )}
+            <div className="dashboard-card-body dependents-list">
+              {memberData.Dependents.map((dependent, index) => (
+                <div className="dependent-card" key={index}>
+                  <p>
+                    <strong>No:</strong> {dependent.DependentNo}
+                  </p>
+                  <p>
+                    <strong>Name:</strong> {dependent.DependentName}
+                  </p>
+                </div>
+              ))}
+            </div>
+          </section>
+        )}
+      </div>
 
       {/* Bottom Section */}
       <section className="bottom-section">

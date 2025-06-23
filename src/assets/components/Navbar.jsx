@@ -76,7 +76,7 @@ const Navbar = ({ isOpen, setIsOpen, onLinkClick }) => {
 
       try {
         const response = await authorizedFetch(
-          `/api/member-profile?member_no=${memberNo}`,
+          `/api/member-profile/?member_no=${memberNo}`,
           {
             method: "GET",
           }

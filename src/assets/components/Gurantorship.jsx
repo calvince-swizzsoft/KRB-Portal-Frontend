@@ -123,9 +123,9 @@ function Guarantorship() {
       </div>
 
       {loading ? (
-        <div className="loading-spinner">
+        <div className="loading-state">
           <div className="spinner"></div>
-          <p>Loading requests...</p>
+          <p>Loading your loan applications...</p>
         </div>
       ) : filteredRequests.length === 0 ? (
         <div className="no-requests">

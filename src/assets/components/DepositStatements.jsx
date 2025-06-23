@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import banner from "../img/KRBLogo.png";
 import "../css/GurantorStatement.css";
+import { authorizedFetch } from '../js/authorizedFetch';
 
 function DepositStatements() {
   const [pdfUrl, setPdfUrl] = useState(null);
@@ -32,7 +33,7 @@ function DepositStatements() {
         setLoading(true);
         setError(null);
 
-        const response = await fetch(
+        const response = await authorizedFetch(
           `/api/member-deposit-report/?member_no=${memberNo}`,
           {
             method: "GET",

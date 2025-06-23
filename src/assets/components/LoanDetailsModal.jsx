@@ -268,7 +268,7 @@ function LoanDetailsModal({ loan, onClose }) {
       toast.success(data.message || "Loan submitted successfully");
 
       setTimeout(() => {
-        onclose();
+        onClose();
       }, 2000);
     } catch (error) {
       toast.error("An unexpected error occurred while submitting the loan");

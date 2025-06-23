@@ -15,7 +15,6 @@ function OnlineLoanApplication() {
   const [searchTerm, setSearchTerm] = useState("");
   const [filterTerm, setFilterTerm] = useState("all");
   const [isMobile, setIsMobile] = useState(false);
-  const [loanType, setLoanType] = useState("");
   const [loanAmount, setLoanAmount] = useState("");
   const [loanPurpose, setLoanPurpose] = useState("");
   const [repaymentPeriod, setRepaymentPeriod] = useState("");
@@ -42,17 +41,24 @@ function OnlineLoanApplication() {
   useEffect(() => {
     const fetchLoanProducts = async () => {
       try {
-        const response = await authorizedFetch(
-          `/api/loan-products/`,{
-            method: 'GET'
-          }
-        );
+        const response = await authorizedFetch(`/api/loan-products/`, {
+          method: 'GET'
+        });
 
         if (!response.ok) throw new Error("Failed to fetch loan products");
 
         const data = await response.json();
-        setLoanProducts(data);
-        setFilteredProducts(data);
+        // Process the data to extract numeric values from strings
+        const processedData = data.map(loan => ({
+          ...loan,
+          maxAmount: parseNumber(loan.max_amount),
+          minAmount: 0, // Assuming minimum is 0 if not provided
+          maxInstallments: parseInt(loan.term.replace('M', '')) || 60, // Extract months from term
+          interestRate: parseFloat(loan.interest_rate) || 0
+        }));
+        
+        setLoanProducts(processedData);
+        setFilteredProducts(processedData);
       } catch (error) {
         toast.error(error.message);
       } finally {
@@ -86,9 +92,14 @@ function OnlineLoanApplication() {
     setFilteredProducts(results);
   }, [searchTerm, filterTerm, loanProducts]);
 
+  const parseNumber = (value) => {
+    if (!value) return 0;
+    // Remove commas and convert to number
+    return parseFloat(value.toString().replace(/,/g, ""));
+  };
+
   const handleApplyClick = (loan) => {
     setSelectedLoan(loan);
-    setLoanType(loan.loan_code);
     setIsModalOpen(true);
   };
 
@@ -98,18 +109,14 @@ function OnlineLoanApplication() {
     setLoanAmount("");
     setLoanPurpose("");
     setRepaymentPeriod("");
-  };
-
-  const parseNumber = (value) => {
-    if (!value) return 0;
-    return parseFloat(value.toString().replace(/,/g, ""));
+    setSubmitStatus({ message: "", isError: false, isSuccess: false });
   };
 
   const validateInputs = () => {
     if (!selectedLoan) return false;
 
-    const minAmount = parseNumber(selectedLoan.minAmount);
-    const maxAmount = parseNumber(selectedLoan.maxAmount);
+    const minAmount = selectedLoan.minAmount;
+    const maxAmount = selectedLoan.maxAmount;
     const amount = parseFloat(loanAmount);
     const period = parseInt(repaymentPeriod);
 
@@ -120,7 +127,7 @@ function OnlineLoanApplication() {
 
     if (amount < minAmount || amount > maxAmount) {
       toast.error(
-        `Amount must be between Ksh ${selectedLoan.minAmount} and Ksh ${selectedLoan.maxAmount}`
+        `Amount must be between Ksh ${minAmount.toLocaleString()} and Ksh ${maxAmount.toLocaleString()}`
       );
       return false;
     }
@@ -130,7 +137,7 @@ function OnlineLoanApplication() {
       return false;
     }
 
-    if (period < 1 || period > parseInt(selectedLoan.maxInstallments)) {
+    if (period < 1 || period > selectedLoan.maxInstallments) {
       toast.error(
         `Repayment period must be between 1 and ${selectedLoan.maxInstallments} months`
       );
@@ -160,13 +167,10 @@ function OnlineLoanApplication() {
 
     setLoanApplicationData(payload);
     try {
-      const loanResponse = await authorizedFetch(
-        `/api/apply-loan/`,
-        {
-          method: "POST",
-          body: JSON.stringify(payload),
-        }
-      );
+      const loanResponse = await authorizedFetch(`/api/apply-loan/`, {
+        method: "POST",
+        body: JSON.stringify(payload),
+      });
 
       if (!loanResponse.ok) {
         const errorData = await loanResponse.json();
@@ -184,7 +188,7 @@ function OnlineLoanApplication() {
       setTimeout(() => {
         closeModal();
         navigate("/Home/AppliedLoans");
-      }, 10000);
+      }, 3000);
     } catch (error) {
       toast.error(error.message);
       setSubmitStatus({
@@ -193,6 +197,17 @@ function OnlineLoanApplication() {
         isSuccess: false,
       });
     }
+  };
+
+  const getLoanTypeCategory = (description) => {
+    const desc = description.toLowerCase();
+    if (desc.includes("emergency")) return "emergency";
+    if (desc.includes("instant")) return "quick";
+    if (desc.includes("school")) return "school";
+    if (desc.includes("development")) return "development";
+    if (desc.includes("flexi")) return "quick";
+    if (desc.includes("investment")) return "development";
+    return "normal";
   };
 
   return (
@@ -244,7 +259,7 @@ function OnlineLoanApplication() {
         </div>
 
         {loading ? (
-          <div className="loading-spinner">
+          <div className="loading-state">
             <div className="spinner"></div>
             <p>Loading loan products...</p>
           </div>
@@ -280,17 +295,31 @@ function OnlineLoanApplication() {
                   <div className="detail-row">
                     <span className="detail-label">Amount Range:</span>
                     <span className="detail-value">
-                      Ksh {loan.minAmount} - Ksh {loan.maxAmount}
+                      Ksh 0 - Ksh {loan.maxAmount.toLocaleString()}
                     </span>
                   </div>
                   <div className="detail-row">
                     <span className="detail-label">Interest Rate:</span>
-                    <span className="detail-value">{parseFloat(loan.interestRate).toFixed(2).replace(/\.00$/, '')}%</span>
+                    <span className="detail-value">
+                      {loan.interestRate}%
+                    </span>
                   </div>
                   <div className="detail-row">
                     <span className="detail-label">Max Period:</span>
                     <span className="detail-value">
                       {loan.maxInstallments} months
+                    </span>
+                  </div>
+                  <div className="detail-row">
+                    <span className="detail-label">Repayment Type:</span>
+                    <span className="detail-value">
+                      {loan.repayment_type}
+                    </span>
+                  </div>
+                  <div className="detail-row">
+                    <span className="detail-label">Frequency:</span>
+                    <span className="detail-value">
+                      {loan.repayment_frequency}
                     </span>
                   </div>
                   <button
@@ -310,7 +339,7 @@ function OnlineLoanApplication() {
         <div className="modal-backdrop">
           <div className="modal-content">
             <div className="modal-header">
-              <h2>Apply</h2>
+              <h2>Apply for {selectedLoan.product_description}</h2>
               <button className="modal-close" onClick={closeModal}>
                 &times;
               </button>
@@ -339,16 +368,15 @@ function OnlineLoanApplication() {
 
                 <div className="form-group">
                   <label>
-                    Loan Amount (KES) - Range: Ksh {selectedLoan.minAmount} to{" "}
-                    {selectedLoan.maxAmount}
+                    Loan Amount (KES) - Range: Ksh 0 to {selectedLoan.maxAmount.toLocaleString()}
                   </label>
                   <input
                     type="number"
-                    placeholder={`Enter amount between ${selectedLoan.minAmount} and ${selectedLoan.maxAmount}`}
+                    placeholder={`Enter amount between 0 and ${selectedLoan.maxAmount.toLocaleString()}`}
                     value={loanAmount}
                     onChange={(e) => setLoanAmount(e.target.value)}
-                    min={parseNumber(selectedLoan.minAmount)}
-                    max={parseNumber(selectedLoan.maxAmount)}
+                    min="0"
+                    max={selectedLoan.maxAmount}
                     required
                     className="form-control"
                   />
@@ -356,8 +384,7 @@ function OnlineLoanApplication() {
 
                 <div className="form-group">
                   <label>
-                    Repayment Period (Months) - Max:{" "}
-                    {selectedLoan.maxInstallments}
+                    Repayment Period (Months) - Max: {selectedLoan.maxInstallments}
                   </label>
                   <input
                     type="number"
@@ -382,6 +409,17 @@ function OnlineLoanApplication() {
                     rows="4"
                   ></textarea>
                 </div>
+
+                <div className="form-group">
+                  <label>Interest Rate</label>
+                  <input
+                    type="text"
+                    value={`${selectedLoan.interestRate}%`}
+                    readOnly
+                    className="form-control"
+                  />
+                </div>
+
                 {submitStatus.message && (
                   <div
                     className={`form-message ${

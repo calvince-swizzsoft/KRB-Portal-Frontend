@@ -34,7 +34,7 @@ function GurantorStatement() {
         setLoading(true);
         setError(null);
 
-        const response = await authorizedFetch(`$/api/loan-guarantors-report/?member_no=${memberNo}`,
+        const response = await authorizedFetch(`/api/loan-guarantors-report/?member_no=${memberNo}`,
           {
             method: "GET",
           }

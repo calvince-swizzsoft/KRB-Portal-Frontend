@@ -35,7 +35,7 @@ function MemberAccounts() {
         }
 
         const profileRes = await authorizedFetch(
-          `/api/member-profile?member_no=${memberNo}`,
+          `/api/member-profile/?member_no=${memberNo}`,
           {
             method: "GET",
           }
@@ -50,7 +50,7 @@ function MemberAccounts() {
         }
 
         const statsRes = await authorizedFetch(
-          `/api/member-account-statistics?member_no=${memberNo}`,
+          `/api/member-account-statistics/?member_no=${memberNo}`,
           {
             method: "GET",
           }
