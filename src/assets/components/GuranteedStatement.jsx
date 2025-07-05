@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react';
 import banner from "../img/KRBLogo.png";
 import "../css/GurantorStatement.css";
 import { authorizedFetch } from '../js/authorizedFetch';
+import KrbsacoLoader from "./KrbsacoLoader";
 
 function GuranteedStatement() {
   const [pdfUrl, setPdfUrl] = useState(null);
@@ -72,6 +73,8 @@ function GuranteedStatement() {
   if (!memberNo) {
     return <div className="error-message">Error: No member number found</div>;
   }
+
+  if (loading) return <KrbsacoLoader/>;
 
   return (
     <div className="statement-container">

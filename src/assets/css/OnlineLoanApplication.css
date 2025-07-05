@@ -1,175 +1,193 @@
 /* Base Styles */
-.onlineloanapplication-maincontainer {
-  max-width: 1200px;
-  margin: 0 auto;
-  padding: 1rem;
+.krb-loan-application-container {
+  width: 100%;
+  min-height: 100vh;
+  font-family: 'Segoe UI', Roboto, sans-serif;
+  color: #333;
+  background-color: #fff;
 }
 
-.maincontainer {
-  background-color: white;
-  border-radius: 10px;
-  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
-  padding: 1.5rem;
+.krb-loan-application-content {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 2rem;
 }
-.header-section{
-  width: 100%;
+
+/* Header Styles */
+.krb-loan-header-section {
+  text-align: center;
+  margin-bottom: 2rem;
+}
+
+.krb-loan-logo-container {
   display: flex;
+  align-items: center;
   justify-content: center;
+  gap: 1rem;
+  margin-bottom: 1rem;
+}
+
+.krb-loan-logo {
+  height: 60px;
+  width: auto;
+}
+
+.krb-loan-sacco-name {
+  font-size: 1.5rem;
+  font-weight: 600;
+  color: #196019;
+}
+
+.krb-loan-page-title {
+  font-size: 2rem;
+  margin: 0;
+  color: #2d3748;
 }
 
 /* Search and Filter */
-.search-filter-container {
+.krb-loan-search-filter-container {
   display: flex;
   flex-wrap: wrap;
   gap: 1rem;
-  margin: 1.5rem 0;
-  align-items: center;
+  margin-bottom: 2rem;
 }
 
-.search-box {
+.krb-loan-search-box {
   flex: 1;
   min-width: 250px;
-  position: relative;
 }
 
-.search-box input {
+.krb-loan-search-box input {
   width: 100%;
-  padding: 0.75rem 1rem 0.75rem 2.5rem;
-  border: 1px solid #ddd;
-  border-radius: 6px;
+  padding: 0.75rem 1rem;
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
   font-size: 1rem;
-  transition: all 0.3s;
+  transition: all 0.2s;
 }
 
-.search-box input:focus {
+.krb-loan-search-box input:focus {
   outline: none;
   border-color: #196019;
   box-shadow: 0 0 0 2px rgba(25, 96, 25, 0.2);
 }
 
-.search-icon {
-  position: absolute;
-  left: 1rem;
-  top: 50%;
-  transform: translateY(-50%);
-  color: #777;
-}
-
-.filter-options select {
+.krb-loan-filter-options select {
+  width: 100%;
+  min-width: 200px;
   padding: 0.75rem 1rem;
-  border: 1px solid #ddd;
-  border-radius: 6px;
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
   font-size: 1rem;
   background-color: white;
   cursor: pointer;
 }
 
-/* Loan Products Container */
-.loan-products-container {
+/* Loan Products Grid */
+.krb-loan-products-grid {
   display: grid;
-  gap: 1rem;
+  gap: 1.5rem;
 }
 
-.desktop-view {
-  grid-template-columns: repeat(2, 1fr);
+.krb-loan-desktop-view {
+  grid-template-columns: repeat(auto-fill, minmax(400px, 1fr));
 }
 
-.mobile-view {
+.krb-loan-mobile-view {
   grid-template-columns: 1fr;
 }
 
-/* Loan Product (details/summary) */
-.loan-product {
-  background-color: white;
-  border-radius: 8px;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
-  margin-bottom: 1rem;
-  border: 1px solid #e0e0e0;
+.krb-loan-product-card {
+  background: white;
+  border-radius: 10px;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
+  overflow: hidden;
+  transition: all 0.3s ease;
 }
 
-.loan-product summary {
-  padding: 1rem;
-  cursor: pointer;
+.krb-loan-product-card:hover {
+  box-shadow: 0 10px 15px rgba(0, 0, 0, 0.1);
+  transform: translateY(-2px);
+}
+
+.krb-loan-product-header {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  font-weight: 500;
-  color: #333;
-  list-style: none;
-  transition: background-color 0.2s;
+  padding: 1.25rem;
+  background-color: #f8fafc;
+  cursor: pointer;
+  border-bottom: 1px solid #e2e8f0;
 }
 
-.loan-product summary:hover {
-  background-color: #f8f9fa;
-}
-
-.loan-product summary::-webkit-details-marker {
-  display: none;
-}
-
-.loan-product summary:after {
-  content: "+";
-  font-size: 1.2rem;
-  color: #196019;
-}
-
-.loan-product[open] summary:after {
-  content: "-";
-}
-
-.loan-title {
+.krb-loan-product-title {
+  font-weight: 600;
   flex: 1;
+  color: #2d3748;
 }
 
-.loan-code {
+.krb-loan-product-code {
   background-color: #196019;
   color: white;
   padding: 0.25rem 0.5rem;
   border-radius: 4px;
-  font-size: 0.8rem;
-  margin-left: 1rem;
+  font-size: 0.85rem;
+  margin: 0 1rem;
 }
 
-.loan-details {
-  padding: 1rem;
-  border-top: 1px solid #eee;
+.krb-loan-expand-icon {
+  font-size: 1.2rem;
+  font-weight: bold;
+  color: #4a5568;
 }
 
-.detail-row {
+.krb-loan-product-details {
+  padding: 0 1.25rem;
+  max-height: 0;
+  overflow: hidden;
+  transition: max-height 0.3s ease;
+}
+
+.krb-loan-expanded .krb-loan-product-details {
+  max-height: 500px;
+  padding: 1.25rem;
+}
+
+.krb-loan-detail-row {
   display: flex;
   justify-content: space-between;
   margin-bottom: 0.75rem;
 }
 
-.detail-label {
+.krb-loan-detail-label {
   font-weight: 500;
-  color: #666;
+  color: #4a5568;
 }
 
-.detail-value {
-  font-weight: 600;
-  color: #333;
+.krb-loan-detail-value {
+  color: #2d3748;
 }
 
-.apply-btn {
+.krb-loan-apply-btn {
   width: 100%;
   padding: 0.75rem;
   background-color: #196019;
   color: white;
   border: none;
   border-radius: 6px;
+  font-size: 1rem;
   font-weight: 500;
   cursor: pointer;
-  transition: background-color 0.2s;
   margin-top: 1rem;
+  transition: background-color 0.2s;
 }
 
-.apply-btn:hover {
-  background-color: #134913;
+.krb-loan-apply-btn:hover {
+  background-color: #145214;
 }
 
 /* Loading and No Results */
-.loading-spinner {
+.krb-loan-loading-state {
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -177,69 +195,51 @@
   padding: 2rem;
 }
 
-.spinner {
-  border: 4px solid rgba(25, 96, 25, 0.1);
+.krb-loan-spinner {
+  border: 4px solid rgba(0, 0, 0, 0.1);
   border-radius: 50%;
   border-top: 4px solid #196019;
   width: 40px;
   height: 40px;
-  animation: spin 1s linear infinite;
+  animation: krb-loan-spin 1s linear infinite;
   margin-bottom: 1rem;
 }
 
-@keyframes spin {
+@keyframes krb-loan-spin {
   0% { transform: rotate(0deg); }
   100% { transform: rotate(360deg); }
 }
 
-.no-results {
+.krb-loan-no-results {
   text-align: center;
   padding: 2rem;
-  color: #666;
+  background: white;
+  border-radius: 8px;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
 }
 
-.no-results img {
+.krb-loan-no-results img {
   max-width: 200px;
   margin-bottom: 1rem;
   opacity: 0.7;
 }
 
-.clear-filters {
-  margin-top: 1rem;
-  padding: 0.5rem 1.5rem;
-  background-color: #196019;
+.krb-loan-clear-filters {
+  padding: 0.5rem 1rem;
+  background: #196019;
   color: white;
   border: none;
-  border-radius: 4px;
+  border-radius: 6px;
   cursor: pointer;
+  transition: all 0.2s;
 }
 
-.clear-filters:hover {
-  background-color: #134913;
+.krb-loan-clear-filters:hover {
+  background: #145214;
 }
 
-/* Responsive Adjustments */
-@media (max-width: 768px) {
-  .search-filter-container {
-    flex-direction: column;
-  }
-  
-  .search-box, .filter-options select {
-    width: 100%;
-  }
-  
-  .loan-product summary {
-    flex-direction: column;
-    align-items: flex-start;
-  }
-  
-  .loan-code {
-    margin-left: 0;
-    margin-top: 0.5rem;
-  }
-}
 /* Modal Styles */
-.modal-backdrop {
+.krb-loan-modal-backdrop {
   position: fixed;
   top: 0;
   left: 0;
@@ -250,216 +250,167 @@
   justify-content: center;
   align-items: center;
   z-index: 1000;
+  padding: 1rem;
 }
 
-.modal-content {
-  background-color: white;
-  border-radius: 8px;
-  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.2);
-  width: 90%;
+.krb-loan-modal-content {
+  background: white;
+  border-radius: 10px;
+  width: 100%;
   max-width: 600px;
   max-height: 90vh;
   overflow-y: auto;
-  animation: modalFadeIn 0.3s ease-out;
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.2);
 }
 
-@keyframes modalFadeIn {
-  from {
-    opacity: 0;
-    transform: translateY(-20px);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
-}
-
-.modal-header {
-  padding: 20px;
-  border-bottom: 1px solid #eee;
+.krb-loan-modal-header {
   display: flex;
   justify-content: space-between;
   align-items: center;
+  padding: 1.5rem;
+  border-bottom: 1px solid #e2e8f0;
 }
 
-.modal-header h2 {
+.krb-loan-modal-header h2 {
   margin: 0;
   font-size: 1.5rem;
-  color: #333;
+  color: #2d3748;
 }
 
-.modal-close {
+.krb-loan-modal-close {
   background: none;
   border: none;
   font-size: 1.5rem;
   cursor: pointer;
-  color: #666;
-  padding: 0 10px;
+  color: #718096;
 }
 
-.modal-close:hover {
-  color: #333;
+.krb-loan-modal-close:hover {
+  color: #4a5568;
 }
 
-.modal-body {
-  padding: 20px;
+.krb-loan-modal-body {
+  padding: 1.5rem;
 }
 
 /* Form Styles */
-.form-group {
-  margin-bottom: 20px;
+.krb-loan-form-group {
+  margin-bottom: 1.25rem;
 }
 
-.form-group label {
+.krb-loan-form-group label {
   display: block;
-  margin-bottom: 8px;
-  font-weight: 600;
-  color: #444;
+  margin-bottom: 0.5rem;
+  font-weight: 500;
+  color: #4a5568;
 }
 
-.form-control {
+.krb-loan-form-control {
   width: 100%;
-  padding: 10px;
-  border: 1px solid #ddd;
-  border-radius: 4px;
+  padding: 0.75rem 1rem;
+  border: 1px solid #e2e8f0;
+  border-radius: 6px;
   font-size: 1rem;
-}
-
-.form-control:focus {
-  border-color: #4a90e2;
-  outline: none;
-  box-shadow: 0 0 0 2px rgba(74, 144, 226, 0.2);
-}
-
-textarea.form-control {
-  min-height: 100px;
-  resize: vertical;
-}
-
-.form-actions {
-  display: flex;
-  justify-content: flex-end;
-  gap: 10px;
-  margin-top: 20px;
-}
-
-.btn {
-  padding: 10px 20px;
-  border-radius: 4px;
-  font-weight: 600;
-  cursor: pointer;
   transition: all 0.2s;
 }
 
-.btn-secondary {
-  background-color: #f0f0f0;
-  border: 1px solid #ddd;
-  color: #333;
+.krb-loan-form-control:focus {
+  outline: none;
+  border-color: #196019;
+  box-shadow: 0 0 0 2px rgba(25, 96, 25, 0.2);
 }
 
-.btn-secondary:hover {
-  background-color: #e0e0e0;
-}
-
-.btn-primary {
-  background-color: #4a90e2;
-  border: 1px solid #4a90e2;
-  color: white;
-}
-
-.btn-primary:hover {
-  background-color: #3a80d2;
-}
-
-/* Loan Card Styles */
-.loan-product-card {
-  background: white;
-  border-radius: 8px;
-  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
-  padding: 20px;
-  margin-bottom: 20px;
-  transition: transform 0.2s, box-shadow 0.2s;
-}
-
-.loan-product-card:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.15);
-}
-
-.loan-card-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 15px;
-  border-bottom: 1px solid #eee;
-  padding-bottom: 10px;
-}
-
-.loan-title {
-  font-size: 1.2rem;
-  color: #333;
-  margin: 0;
-}
-
-.loan-code {
-  background-color: #f0f7ff;
-  color: #4a90e2;
-  padding: 4px 8px;
-  border-radius: 4px;
-  font-size: 0.9rem;
-  font-weight: 600;
-}
-
-.loan-card-details {
-  margin-bottom: 15px;
-}
-
-.detail-row {
-  display: flex;
-  justify-content: space-between;
-  margin-bottom: 8px;
-}
-
-.detail-label {
-  color: #666;
+.krb-loan-form-message {
+  padding: 0.75rem 1rem;
+  border-radius: 6px;
+  margin-bottom: 1.25rem;
   font-weight: 500;
 }
 
-.detail-value {
-  color: #333;
-  font-weight: 600;
+.krb-loan-success {
+  background-color: #f0fff4;
+  color: #38a169;
+  border: 1px solid #68d391;
 }
 
-.apply-btn {
-  width: 100%;
-  padding: 10px;
-  background-color: #4a90e2;
+.krb-loan-error {
+  background-color: #fff5f5;
+  color: #e53e3e;
+  border: 1px solid #fc8181;
+}
+
+.krb-loan-form-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 1rem;
+  margin-top: 1.5rem;
+}
+
+.krb-loan-btn-primary {
+  padding: 0.75rem 1.5rem;
+  background-color: #196019;
   color: white;
   border: none;
-  border-radius: 4px;
-  font-weight: 600;
+  border-radius: 6px;
+  font-size: 1rem;
+  font-weight: 500;
   cursor: pointer;
   transition: background-color 0.2s;
 }
 
-.apply-btn:hover {
-  background-color: #3a80d2;
+.krb-loan-btn-primary:hover {
+  background-color: #145214;
 }
-.form-message {
-  padding: 12px;
-  margin: 15px 0;
-  border-radius: 4px;
+
+.krb-loan-btn-secondary {
+  padding: 0.75rem 1.5rem;
+  background-color: #f0f0f0;
+  color: #4a5568;
+  border: none;
+  border-radius: 6px;
+  font-size: 1rem;
   font-weight: 500;
+  cursor: pointer;
+  transition: background-color 0.2s;
 }
 
-.form-message.error {
-  background-color: #ffebee;
-  color: #d32f2f;
-  border: 1px solid #ef9a9a;
+.krb-loan-btn-secondary:hover {
+  background-color: #e2e8f0;
 }
 
-.form-message.success {
-  background-color: #e8f5e9;
-  color: #2e7d32;
-  border: 1px solid #a5d6a7;
+/* Responsive Styles */
+@media (max-width: 768px) {
+  .krb-loan-application-content {
+    padding: 1rem;
+  }
+
+  .krb-loan-page-title {
+    font-size: 1.5rem;
+  }
+
+  .krb-loan-product-header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0.5rem;
+  }
+
+  .krb-loan-product-code {
+    margin: 0;
+    align-self: flex-start;
+  }
+
+  .krb-loan-expand-icon {
+    position: absolute;
+    right: 1.25rem;
+    top: 1.25rem;
+  }
+
+  .krb-loan-form-actions {
+    flex-direction: column;
+  }
+
+  .krb-loan-btn-primary,
+  .krb-loan-btn-secondary {
+    width: 100%;
+  }
 }

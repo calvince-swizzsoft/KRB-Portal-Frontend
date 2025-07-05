@@ -205,42 +205,55 @@ function LoanDetailsModal({ loan, onClose }) {
   };
 
   const handleSaveChanges = async () => {
-    if (!editableLoan.amount || editableLoan.amount <= 0) {
-      toast.error("Please enter a valid loan amount");
-      return;
+  if (!editableLoan.amount || editableLoan.amount <= 0) {
+    toast.error("Please enter a valid loan amount");
+    return;
+  }
+  if (!editableLoan.installments || editableLoan.installments <= 0) {
+    toast.error("Please enter a valid repayment period");
+    return;
+  }
+
+  setIsSaving(true);
+
+  try {
+    const payload = {
+      loanNumber: loan.id,
+      memberNumber: sessionStorage.getItem("memberNo"),
+      amountRequest: String(editableLoan.amount),
+      loanType: editableLoan.productType,
+      repaymentPeriod: editableLoan.installments,
+    };
+
+    const response = await authorizedFetch(
+      `/api/edit-loan/`,
+      {
+        method: "POST",
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(payload),
+      }
+    );
+    console.log(response)
+
+    // Parse the response data
+    const data = await response.json();
+    console.log(data)
+    
+    if (!response.ok) {
+      throw new Error(data.errors || "Failed to save changes");
+      
     }
-    if (!editableLoan.installments || editableLoan.installments <= 0) {
-      toast.error("Please enter a valid repayment period");
-      return;
-    }
 
-    setIsSaving(true);
-
-    try {
-      const payload = {
-        loanNumber: loan.id,
-        memberNumber: sessionStorage.getItem("memberNo"),
-        amountRequest: String(editableLoan.amount),
-        loanType: editableLoan.productType,
-        repaymentPeriod: editableLoan.installments,
-      };
-
-      const response = await authorizedFetch(
-        `/api/edit-loan/`,
-        {
-          method: "POST",
-          body: JSON.stringify(payload),
-        }
-      );
-      if (!response.ok) throw new Error("Failed to save changes");
-
-      toast.success("Loan details updated successfully!");
-    } catch (error) {
-      toast.error(error.message);
-    } finally {
-      setIsSaving(false);
-    }
-  };
+    toast.success(data.message || "Loan details updated successfully!");
+  } catch (error) {
+    toast.error(error.message || "An unexpected error occurred");
+    console.error("Error saving changes:", error);
+  } finally {
+    setIsSaving(false);
+  }
+};
   const submitLoan = async () => {
     if (!memberNo || !loan?.id) {
       toast.error("Missing member or loan number");

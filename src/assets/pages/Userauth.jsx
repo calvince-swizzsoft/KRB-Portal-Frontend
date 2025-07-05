@@ -159,8 +159,8 @@ const UserAuth = () => {
 
           {isLoginView && (
             <p className="help-text">
-              <FiHelpCircle />
-              <span>Forgotten your password?<span className="resetbutton" onClick={() => navigate("/change-password")}> Reset Password</span></span>
+              {/* <FiHelpCircle /> */}
+              {/* <span>Forgotten your password?<span className="resetbutton" onClick={() => navigate("/change-password")}> Reset Password</span></span> */}
             </p>
           )}
 

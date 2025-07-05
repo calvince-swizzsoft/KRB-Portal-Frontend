@@ -1,21 +1,23 @@
 import React, { useEffect, useState } from "react";
 import KRBLogo from "../img/KRBLogo.png";
+import KrbsacoLoader from "./KrbsacoLoader";
 import { authorizedFetch } from "../js/authorizedFetch";
-import "../css/MemberAccounts.css";
 import {
   FaUser,
-  FaEnvelope,
   FaPhone,
   FaIdCard,
-  FaBirthdayCake,
-  FaVenusMars,
+  FaCalendarAlt,
   FaUserCheck,
   FaWallet,
   FaMoneyBillWave,
+  FaPiggyBank,
+  FaHandHoldingUsd,
+  FaPercent
 } from "react-icons/fa";
 import { MdCategory } from "react-icons/md";
-import { GrStatusUnknown } from "react-icons/gr";
+import { IoMdInformationCircle } from "react-icons/io";
 import { toast } from "react-toastify";
+import '../css/MemberAccounts.css'
 
 function MemberAccounts() {
   const [profile, setProfile] = useState(null);
@@ -23,8 +25,6 @@ function MemberAccounts() {
   const [loading, setLoading] = useState(true);
 
   const memberNo = sessionStorage.getItem("memberNo");
-  const accesstoken = sessionStorage.getItem("token");
-  const refreshtoken = sessionStorage.getItem("refresh");
 
   useEffect(() => {
     const fetchData = async () => {
@@ -34,36 +34,39 @@ function MemberAccounts() {
           return;
         }
 
+        // Fetch member profile
         const profileRes = await authorizedFetch(
           `/api/member-profile/?member_no=${memberNo}`,
-          {
-            method: "GET",
-          }
+          { method: "GET" }
         );
         const profileJson = await profileRes.json();
-        console.log(profileJson);
 
-        if (profileJson?.profile?.profile) {
-          setProfile(profileJson.profile.profile);
+        if (profileJson?.profile) {
+          setProfile(profileJson.profile);
         } else {
           toast.error("Failed to load member profile.");
         }
 
+        // Fetch member stats
         const statsRes = await authorizedFetch(
           `/api/member-account-statistics/?member_no=${memberNo}`,
-          {
-            method: "GET",
-          }
+          { method: "GET" }
         );
         const statsJson = await statsRes.json();
 
-        if (statsJson) {
-          setStats(statsJson);
+        const normalizedStats = {
+          ...statsJson,
+          PayrollNumber: statsJson["Payroll No"],
+        };
+
+        if (normalizedStats) {
+          setStats(normalizedStats);
         } else {
           toast.error("Failed to load member account statistics.");
         }
+
       } catch (err) {
-        console.error(err);
+        console.error("Error:", err);
         toast.error("Error loading data.");
       } finally {
         setLoading(false);
@@ -78,6 +81,8 @@ function MemberAccounts() {
     const num =
       typeof value === "string" ? parseFloat(value.replace(/,/g, "")) : value;
     return num.toLocaleString("en-KE", {
+      style: "currency",
+      currency: "KES",
       minimumFractionDigits: 2,
       maximumFractionDigits: 2,
     });
@@ -90,114 +95,213 @@ function MemberAccounts() {
       ? dateStr
       : date.toLocaleDateString("en-US", {
           year: "numeric",
-          month: "long",
+          month: "short",
           day: "numeric",
         });
   };
 
-  if (loading) return <div className="profile-container">Loading...</div>;
-  if (!profile || !stats)
-    return <div className="profile-container">Failed to load data.</div>;
+  if (loading) return <KrbsacoLoader />;
+  if (!profile) {
+    return <div className="memberaccountstatistics-error">Profile not found.</div>;
+  }
+
+  if (!stats?.MemberDeposits) {
+    return <div className="memberaccountstatistics-error">Account statistics not available.</div>;
+  }
 
   return (
-    <div className="profile-container">
-      <div className="profile-card">
-        <div className="header-section">
-          <div className="logo-container">
-            <img src={KRBLogo} alt="KRB Logo" className="krb-logo" />
-            <div className="sacco-name">Kenya Road Board Sacco</div>
+    <div className="memberaccountstatistics-container">
+      {/* Glassmorphism Header */}
+      <header className="memberaccountstatistics-header">
+        <div className="memberaccountstatistics-header-content">
+          <div className="memberaccountstatistics-logo-title">
+            <img src={KRBLogo} alt="KRB Logo" className="memberaccountstatistics-logo" />
+            <span className="memberaccountstatistics-sacco-name">Kenya Road Board SACCO</span>
           </div>
-          <h1 className="page-title">Member Account Details</h1>
-        </div>
-
-        <div className="profile-columns">
-          <div className="column">
-            <Field
-              icon={<FaUser />}
-              label="Member Number"
-              value={profile.MemberNumber || "N/A"}
-            />
-            <Field
-              icon={<FaUserCheck />}
-              label="Member Name"
-              value={profile.FullName || "N/A"}
-            />
-            <Field
-              icon={<GrStatusUnknown />}
-              label="Account Status"
-              value={profile.Status || "N/A"}
-            />
-            <Field
-              icon={<FaPhone />}
-              label="Mobile Number"
-              value={profile.Phone || "N/A"}
-            />
-          </div>
-
-          <div className="column">
-            <Field
-              icon={<FaIdCard />}
-              label="ID Number"
-              value={profile.IDNumber || "N/A"}
-            />
-            <Field
-              icon={<MdCategory />}
-              label="KRA PIN"
-              value={profile.KRAPin || "N/A"}
-            />
-            <Field
-              icon={<FaWallet />}
-              label="Payroll Number"
-              value={profile.PayrollNumber || "N/A"}
-            />
-            <Field
-              icon={<FaBirthdayCake />}
-              label="Join Date"
-              value={formatDate(profile.JoinDate)}
-            />
+          <div className="memberaccountstatistics-user-badge">
+            <span className="memberaccountstatistics-member-id">Member Number {memberNo}</span>
           </div>
         </div>
+      </header>
 
-        <h3 className="profile-subtitle">Account Statistics</h3>
-
-        <div className="profile-columns">
-          <div className="column">
-            <Field
-              icon={<FaWallet />}
-              label="Deposit Balance"
-              value={`KES ${formatCurrency(stats.MemberDeposits)}`}
-            />
-            <Field
-              icon={<FaMoneyBillWave />}
-              label="Share Capital"
-              value={`KES ${formatCurrency(stats.ShareCapital)}`}
-            />
+      {/* Main Dashboard Content */}
+<main className="member-dashboard">
+  {/* Top Row - Profile and Financial Summary */}
+  <div className="dashboard-top-row">
+    {/* Profile Card - Wider with better layout */}
+    <div className="profile-card">
+      <div className="profile-avatar-container">
+        {profile.ImageBase64 ? (
+          <img 
+            src={`data:image/png;base64,${profile.ImageBase64}`} 
+            alt="Member" 
+            className="profile-avatar"
+          />
+        ) : (
+          <div className="avatar-placeholder">
+            <FaUser size={40} />
           </div>
-          <div className="column">
-            <Field
-              icon={<FaUser />}
-              label="Loan Balance"
-              value={`KES ${formatCurrency(stats.OutstandingLoanBalance)}`}
-            />
-            <Field
-              icon={<FaWallet />}
-              label="Junior Savings"
-              value={`KES ${formatCurrency(stats.JuniorSavings)}`}
-            />
+        )}
+      </div>
+      <div className="profile-details">
+        <div className="profile-header">
+          <h2 className="profile-name">{profile.FullName || "N/A"}</h2>
+          <span className={`status-badge status-${profile.Status?.toLowerCase()}`}>
+            {profile.Status || "N/A"}
+          </span>
+        </div>
+        
+        <div className="profile-meta-grid">
+          <div className="meta-item">
+            <FaPhone className="meta-icon" />
+            <div>
+              <span className="meta-label">Phone</span>
+              <span className="meta-value">{profile.Phone || "N/A"}</span>
+            </div>
+          </div>
+          <div className="meta-item">
+            <FaCalendarAlt className="meta-icon" />
+            <div>
+              <span className="meta-label">Member Since</span>
+              <span className="meta-value">{formatDate(profile.JoinDate)}</span>
+            </div>
+          </div>
+          <div className="meta-item">
+            <FaIdCard className="meta-icon" />
+            <div>
+              <span className="meta-label">ID Number</span>
+              <span className="meta-value">{profile.IDNumber || "N/A"}</span>
+            </div>
+          </div>
+          <div className="meta-item">
+            <MdCategory className="meta-icon" />
+            <div>
+              <span className="meta-label">KRA PIN</span>
+              <span className="meta-value">{profile.KRAPin || "N/A"}</span>
+            </div>
           </div>
         </div>
+      </div>
+    </div>
+
+    {/* Financial Summary Cards - Horizontal Layout */}
+    <div className="financial-summary">
+      <h3 className="section-title">
+        <FaWallet className="section-icon" /> 
+        Financial Summary
+      </h3>
+      <div className="financial-cards">
+        <FinancialCard 
+          icon={<FaPiggyBank className="card-icon" />}
+          title="Deposit Balance"
+          value={formatCurrency(stats.MemberDeposits)}
+          trend="up"
+          variant="primary"
+        />
+        <FinancialCard 
+          icon={<FaMoneyBillWave className="card-icon" />}
+          title="Share Capital"
+          value={formatCurrency(stats.ShareCapital)}
+          trend="neutral"
+          variant="secondary"
+        />
+        <FinancialCard 
+          icon={<FaHandHoldingUsd className="card-icon" />}
+          title="Loan Balance"
+          value={formatCurrency(stats.OutstandingLoanBalance)}
+          trend="down"
+          variant="tertiary"
+        />
+      </div>
+    </div>
+  </div>
+
+  {/* Middle Row - Account Details */}
+  <div className="dashboard-middle-row">
+    {/* Account Statistics */}
+    <div className="account-details-card">
+      <h3 className="section-title">
+        <FaWallet className="section-icon" /> 
+        Account Details
+      </h3>
+      <div className="details-grid">
+        <InfoField 
+          icon={<FaPercent className="field-icon" />}
+          label="Outstanding Interest"
+          value={formatCurrency(stats.OutstandingInterest)}
+          highlight
+        />
+        <InfoField 
+          icon={<FaWallet className="field-icon" />}
+          label="Junior Savings"
+          value={formatCurrency(stats.JuniorSavings)}
+        />
+        <InfoField 
+          icon={<FaUserCheck className="field-icon" />}
+          label="Payroll No"
+          value={stats.PayrollNumber || "N/A"}
+        />
+      </div>
+    </div>
+
+    {/* Dependents Section */}
+    {stats.Dependents && stats.Dependents.length > 0 && (
+      <div className="dependents-card">
+        <h3 className="section-title">
+          <FaUserCheck className="section-icon" /> 
+          Dependents ({stats.Dependents.length})
+        </h3>
+        <div className="dependents-grid">
+          {stats.Dependents.map((dep, index) => (
+            <div key={index} className="dependent-item">
+              <div className="dependent-avatar">
+                <FaUser className="dependent-icon" />
+              </div>
+              <div className="dependent-info">
+                <h4 className="dependent-name">{dep.DependentName}</h4>
+                <p className="dependent-number">No: {dep.DependentNo}</p>
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+    )}
+  </div>
+</main>
+    </div>
+  );
+}
+
+// Financial Card Component
+function FinancialCard({ icon, title, value, trend }) {
+  return (
+    <div className={`memberaccountstatistics-financial-card memberaccountstatistics-trend-${trend}`}>
+      <div className="memberaccountstatistics-card-header">
+        <div className="memberaccountstatistics-card-icon-container">
+          {icon}
+        </div>
+        <h4 className="memberaccountstatistics-card-title">{title}</h4>
+      </div>
+      <p className="memberaccountstatistics-card-value">{value}</p>
+      <div className="memberaccountstatistics-card-trend">
+        {trend === 'up' && '↑'}
+        {trend === 'down' && '↓'}
+        {trend === 'neutral' && '→'}
       </div>
     </div>
   );
 }
 
-function Field({ icon, label, value }) {
+// Info Field Component
+function InfoField({ icon, label, value }) {
   return (
-    <div className="profile-field">
-      <div className="profile-icon">{icon}</div>
-      <div className="profile-info">
-        <span className="profile-label">{label}</span>
-        <span className="profile-value">{value}</span>
+    <div className="memberaccountstatistics-info-field">
+      <div className="memberaccountstatistics-info-icon">
+        {icon}
+      </div>
+      <div className="memberaccountstatistics-info-content">
+        <label className="memberaccountstatistics-info-label">{label}</label>
+        <p className="memberaccountstatistics-info-value">{value}</p>
       </div>
     </div>
   );

@@ -244,6 +244,10 @@
   color: red;
   font-weight: bold;
 }
+.loan-table thead{
+  background-color: #196019;
+  color: white;
+}
 
 /* Responsive stacked layout */
 @media (max-width: 768px) {

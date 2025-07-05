@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react';
 import banner from "../img/KRBLogo.png";
 import "../css/GurantorStatement.css";
 import { authorizedFetch } from '../js/authorizedFetch';
+import KrbsacoLoader from "./KrbsacoLoader";
 
 function DetailedStatement() {
   const [pdfUrl, setPdfUrl] = useState(null);
@@ -10,7 +11,6 @@ function DetailedStatement() {
   const [isMobile, setIsMobile] = useState(false);
 
   const memberNo = sessionStorage.getItem("memberNo");
-  const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
 
   useEffect(() => {
     const checkIfMobile = () => {
@@ -73,7 +73,7 @@ function DetailedStatement() {
   if (!memberNo) {
     return <div className="error-message">Error: No member number found</div>;
   }
-
+  if (loading) return <KrbsacoLoader />;
   return (
     <div className="statement-container">
       <div className="statement-card">
@@ -82,7 +82,7 @@ function DetailedStatement() {
           <small className="sacco-name">Kenya Road Board Sacco</small>
         </div>
 
-        <h2 className="statement-title">Member Account Statement</h2>
+        <h2 className="statement-title">Member Detailed Statement</h2>
 
         <div className="statement-content">
           {loading && (

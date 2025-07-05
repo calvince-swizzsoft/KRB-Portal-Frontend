@@ -21,6 +21,15 @@
     opacity: 1;
   }
 }
+.save-changes-btn{
+  padding: 1em;
+  background-color: #196019;
+  color: white;
+  cursor: pointer;
+}
+.save-changes-btn :hover{
+  background-color: #175b17;
+}
 
 /* Modal Container */
 .loan-modal-container {

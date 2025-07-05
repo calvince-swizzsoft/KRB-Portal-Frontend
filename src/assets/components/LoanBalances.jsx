@@ -3,6 +3,7 @@ import { toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 import KRBLogo from "../img/KRBLogo.png";
 import "../css/LoanBalances.css";
+import KrbsacoLoader from "./KrbsacoLoader"; // ✅ Make sure it's imported
 import { authorizedFetch } from "../js/authorizedFetch";
 
 function LoanBalances() {
@@ -32,8 +33,9 @@ function LoanBalances() {
       }
 
       const response = await authorizedFetch(
-        `/api/member-running-loans/?member_no=${memberNo}`,{
-          method: 'GET'
+        `/api/member-running-loans/?member_no=${memberNo}`,
+        {
+          method: "GET",
         }
       );
 
@@ -43,9 +45,7 @@ function LoanBalances() {
         setLoans(data.RunningLoans);
         setFilteredLoans(data.RunningLoans);
       } else {
-        throw new Error(
-          data.StatusDescription || "Failed to fetch loan balances"
-        );
+        throw new Error(data.StatusDescription || "Failed to fetch loan balances");
       }
     } catch (error) {
       toast.error(error.message);
@@ -53,6 +53,9 @@ function LoanBalances() {
       setLoading(false);
     }
   };
+
+  // ✅ Show custom loader first
+  if (loading) return <KrbsacoLoader />;
 
   return (
     <div className="loan-balances-container">
@@ -75,12 +78,7 @@ function LoanBalances() {
         </div>
       </div>
 
-      {loading ? (
-        <div className="loading-state">
-          <div className="spinner"></div>
-          <p>Loading your loan applications...</p>
-        </div>
-      ) : filteredLoans.length === 0 ? (
+      {filteredLoans.length === 0 ? (
         <div className="no-loans">
           <img src="/img/no-loans.svg" alt="No loans" />
           <p>No active loans found</p>
@@ -111,20 +109,14 @@ function LoanBalances() {
                   <td data-label="Loan Number">{loan.LoanNo}</td>
                   <td data-label="Loan Type">{loan.LoanProductType}</td>
                   <td data-label="Loan Status">
-                    <span
-                      className={`loan-status ${loan.LoanStatus.toLowerCase()}`}
-                    >
+                    <span className={`loan-status ${loan.LoanStatus.toLowerCase()}`}>
                       {loan.LoanStatus}
                     </span>
                   </td>
                   <td data-label="Loan Balance">Ksh {loan.LoanBalance}</td>
-                  <td data-label="Requested Amount">
-                    Ksh {loan.RequestedAmount}
-                  </td>
+                  <td data-label="Requested Amount">Ksh {loan.RequestedAmount}</td>
                   <td data-label="Installments">{loan.Installments} months</td>
-                  <td data-label="Remaining Period">
-                    {loan.RemainingPeriod} months
-                  </td>
+                  <td data-label="Remaining Period">{loan.RemainingPeriod} months</td>
                   <td data-label="Amount in Arrears" className="arrears">
                     Ksh {loan.AmountArrears}
                   </td>

@@ -1,83 +1,110 @@
 import React, { useState, useEffect } from "react";
-import { toast } from "react-toastify";
+import { toast, ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
+import KrbsacoLoader from "./KrbsacoLoader";
 import KRBLogo from "../img/KRBLogo.png";
-import "../css/Gurantorship.css";
+import { FaCheck, FaTimes, FaSearch, FaFilter } from "react-icons/fa";
 import { authorizedFetch } from "../js/authorizedFetch";
+import "../css/Gurantorship.css";
 
 function Guarantorship() {
   const [requests, setRequests] = useState([]);
   const [filteredRequests, setFilteredRequests] = useState([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState("");
+  const [filterStatus, setFilterStatus] = useState("all");
+  const [showConfirmDialog, setShowConfirmDialog] = useState(false);
+  const [currentAction, setCurrentAction] = useState(null);
+  const [currentLoanNo, setCurrentLoanNo] = useState(null);
 
   useEffect(() => {
     fetchGuarantorRequests();
   }, []);
 
   useEffect(() => {
-    const results = requests.filter(
-      (request) =>
-        request.ApplicantName.toLowerCase().includes(
-          searchTerm.toLowerCase()
-        ) ||
-        request.LoanApplicationNo.toLowerCase().includes(
-          searchTerm.toLowerCase()
-        )
-    );
+    filterRequests();
+  }, [searchTerm, filterStatus, requests]);
+
+  const filterRequests = () => {
+    let results = requests;
+    
+    if (searchTerm) {
+      results = results.filter(request =>
+        request.ApplicantName.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        request.LoanApplicationNo.toLowerCase().includes(searchTerm.toLowerCase())
+      );
+    }
+    
+    if (filterStatus !== "all") {
+      results = results.filter(request =>
+        request.Status.toLowerCase() === filterStatus.toLowerCase()
+      );
+    }
+    
     setFilteredRequests(results);
-  }, [searchTerm, requests]);
+  };
 
   const fetchGuarantorRequests = async () => {
     try {
+      setLoading(true);
       const memberNo = sessionStorage.getItem("memberNo");
       if (!memberNo) {
-        throw new Error("Member number not found");
+        toast.error("Member number not found. Please log in again.");
+        return;
       }
 
       const response = await authorizedFetch(
-        `/api/loans-for-guarantee/?member=${memberNo}`,{
-          method: 'GET'
-        }
+        `/api/loans-for-guarantee/?member=${memberNo}`,
+        { method: "GET" }
       );
 
-      const data = await response.json();
+      if (!response.ok) {
+        throw new Error("Failed to fetch guarantorship requests");
+      }
 
-      if (data.StatusCode === "400" && data.StatusDescription === "NoLoans") {
+      const data = await response.json();
+      if (data.count === 0 || !Array.isArray(data.loans)) {
         setRequests([]);
-        setFilteredRequests([]);
-        toast.info("No pending guarantorship requests found");
-      } else if (data.StatusCode === "200") {
-        setRequests(data.OnlineRequests);
-        setFilteredRequests(data.OnlineRequests);
+        toast.info("No guarantorship requests found");
       } else {
-        throw new Error(data.StatusDescription || "Failed to fetch requests");
+        const formattedRequests = data.loans.map(request => ({
+          ...request,
+          Status: request.Status || "pending"
+        }));
+        setRequests(formattedRequests);
       }
     } catch (error) {
-      toast.error(error.message);
+      toast.error(error.message || "Failed to load requests");
+      console.error("Fetch error:", error);
     } finally {
       setLoading(false);
     }
   };
 
-  const handleGuarantorshipResponse = async (loanNo, isApproved) => {
+  const handleActionClick = (loanNo, isApproved) => {
+    setCurrentLoanNo(loanNo);
+    setCurrentAction(isApproved ? "approve" : "reject");
+    setShowConfirmDialog(true);
+  };
+
+  const handleConfirmAction = async () => {
     try {
+      const isApproved = currentAction === "approve";
       const memberNo = sessionStorage.getItem("memberNo");
       if (!memberNo) {
-        throw new Error("Member number not found");
+        toast.error("Session expired. Please log in again.");
+        return;
       }
 
-      const response = await authorizedFetch(
-        `/api/approve-guarantorship/`,
-        {
-          method: "POST",
-          body: JSON.stringify({
-            memberNo: memberNo,
-            loanNo: loanNo,
-            approvedStatus: isApproved ? 0 : 1, // 0 for approve, 1 for reject
-          }),
-        }
-      );
+      const response = await authorizedFetch(`/api/approve-guarantorship/`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          memberNo: memberNo,
+          loanNo: currentLoanNo,
+          approvedStatus: isApproved ? 0 : 1, 
+        }),
+      });
 
       const data = await response.json();
 
@@ -86,22 +113,59 @@ function Guarantorship() {
       }
 
       toast.success(
-        `Request ${isApproved ? "approved" : "rejected"} successfully`
+        `Guarantorship ${isApproved ? "approved" : "rejected"} successfully`
       );
-      fetchGuarantorRequests(); // Refresh the list
+      
+      await fetchGuarantorRequests();
     } catch (error) {
-      toast.error(error.message);
+      toast.error(
+        `Failed to ${currentAction} request: ${error.message || "An unexpected error occurred"}`
+      );
+      console.error("Action error:", error);
+    } finally {
+      setShowConfirmDialog(false);
     }
   };
 
+  const getStatusBadge = (status) => {
+    const statusMap = {
+      approved: { text: "Approved", className: "status-approved" },
+      rejected: { text: "Rejected", className: "status-rejected" },
+      pending: { text: "Pending", className: "status-pending" }
+    };
+    
+    const statusInfo = statusMap[status.toLowerCase()] || statusMap.pending;
+    return (
+      <span className={`status-badge ${statusInfo.className}`}>
+        {statusInfo.text}
+      </span>
+    );
+  };
+
+  if (loading) return <KrbsacoLoader />;
+
   return (
     <div className="guarantorship-container">
-      <div className="header-section">
-        <div className="logo-container">
-          <img src={KRBLogo} alt="KRB Logo" className="krb-logo" />
-          <div className="sacco-name">Kenya Road Board Sacco</div>
+      <ToastContainer 
+        position="top-right"
+        autoClose={5000}
+        hideProgressBar={false}
+        newestOnTop={false}
+        closeOnClick
+        rtl={false}
+        pauseOnFocusLoss
+        draggable
+        pauseOnHover
+      />
+      
+      <div className="krb-profile-header">
+        <div className="krb-header-branding">
+          <img src={KRBLogo} alt="KRB Sacco Logo" className="krb-logo" />
+          <div className="krb-header-titles">
+            <h1>KRB SACCO</h1>
+            <p>Member Profile</p>
+          </div>
         </div>
-        <h1 className="page-title">Guarantorship Requests</h1>
       </div>
 
       <div className="search-filter-container">
@@ -111,29 +175,37 @@ function Guarantorship() {
             placeholder="Search by name or loan number..."
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
+            aria-label="Search guarantorship requests"
           />
         </div>
-        <div className="filter-options">
-          <select>
-            <option value="all">All Requests</option>
+        <div className="filter-dropdown">
+          <FaFilter className="filter-icon" />
+          <select
+            value={filterStatus}
+            onChange={(e) => setFilterStatus(e.target.value)}
+            aria-label="Filter by status"
+          >
+            <option value="all">All Statuses</option>
             <option value="pending">Pending</option>
-            <option value="recent">Recent</option>
+            <option value="approved">Approved</option>
+            <option value="rejected">Rejected</option>
           </select>
         </div>
       </div>
 
-      {loading ? (
-        <div className="loading-state">
-          <div className="spinner"></div>
-          <p>Loading your loan applications...</p>
-        </div>
-      ) : filteredRequests.length === 0 ? (
+      {filteredRequests.length === 0 ? (
         <div className="no-requests">
           <img src="/img/no-requests.svg" alt="No requests" />
           <p>No guarantorship requests found</p>
-          {searchTerm && (
-            <button onClick={() => setSearchTerm("")} className="clear-search">
-              Clear search
+          {(searchTerm || filterStatus !== "all") && (
+            <button
+              onClick={() => {
+                setSearchTerm("");
+                setFilterStatus("all");
+              }}
+              className="clear-search"
+            >
+              Clear filters
             </button>
           )}
         </div>
@@ -142,52 +214,73 @@ function Guarantorship() {
           <table className="requests-table">
             <thead>
               <tr>
-                <th>Loan #</th>
                 <th>Applicant Name</th>
+                <th>Applicant Number</th>
+                <th>Loan Number</th>
+                <th>Loan Type</th>
+                <th>Repayment Period</th>
                 <th>Amount</th>
-                <th>Applicant No</th>
                 <th>Status</th>
                 <th>Actions</th>
               </tr>
             </thead>
             <tbody>
               {filteredRequests.map((request) => (
-                <tr key={request.EntryNo} className="request-row">
-                  <td>{request.LoanApplicationNo}</td>
-                  <td>{request.ApplicantName}</td>
-                  <td>Ksh {request.Amount}</td>
-                  <td>{request.ApplicantNo}</td>
-                  <td>
-                    <span className="status-pending">Pending</span>
-                  </td>
-                  <td className="action-buttons">
+                <tr key={`${request.LoanApplicationNo}-${request.ApplicantNo}`}>
+                  <td data-label="Applicant Name">{request.ApplicantName}</td>
+                  <td data-label="Applicant Number">{request.ApplicantNo}</td>
+                  <td data-label="Loan Number">{request.LoanApplicationNo}</td>
+                  <td data-label="Loan Type">{request.LoanTypeDescription}</td>
+                  <td data-label="Repayment Period">{request.LoanRepaymentPeriod}</td>                  
+                  <td data-label="Amount">Ksh {request.LoanRequestedAmount}</td>
+                  <td data-label="Status">{getStatusBadge(request.Status)}</td>
+                  <td data-label="Actions" className="action-buttons">
                     <button
-                      onClick={() =>
-                        handleGuarantorshipResponse(
-                          request.LoanApplicationNo,
-                          true
-                        )
-                      }
-                      className="accept-btn"
+                      onClick={() => handleActionClick(request.LoanApplicationNo, true)}
+                      disabled={request.Status.toLowerCase() === "approved"}
+                      className={`accept-btn ${request.Status.toLowerCase() === "approved" ? "disabled" : ""}`}
+                      aria-label={`Approve request from ${request.ApplicantName}`}
                     >
-                      <i className="icon-check"></i> Approve
+                      <FaCheck /> <span className="action-text">Approve</span>
                     </button>
                     <button
-                      onClick={() =>
-                        handleGuarantorshipResponse(
-                          request.LoanApplicationNo,
-                          false
-                        )
-                      }
-                      className="reject-btn"
+                      onClick={() => handleActionClick(request.LoanApplicationNo, false)}
+                      disabled={request.Status.toLowerCase() !== "pending"}
+                      className={`reject-btn ${request.Status.toLowerCase() !== "pending" ? "disabled" : ""}`}
+                      aria-label={`Reject request from ${request.ApplicantName}`}
                     >
-                      <i className="icon-cancel"></i> Reject
+                      <FaTimes /> <span className="action-text">Reject</span>
                     </button>
                   </td>
                 </tr>
               ))}
             </tbody>
           </table>
+        </div>
+      )}
+
+      {showConfirmDialog && (
+        <div className="confirmation-dialog-overlay">
+          <div className="confirmation-dialog">
+            <h3>Confirm Action</h3>
+            <p>
+              Are you sure you want to {currentAction} this guarantorship request?
+            </p>
+            <div className="dialog-buttons">
+              <button
+                onClick={() => setShowConfirmDialog(false)}
+                className="cancel-btn"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleConfirmAction}
+                className={`confirm-btn ${currentAction}`}
+              >
+                {currentAction === "approve" ? "Confirm Approve" : "Confirm Reject"}
+              </button>
+            </div>
+          </div>
         </div>
       )}
     </div>

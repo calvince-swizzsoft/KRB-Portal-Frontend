@@ -3,7 +3,8 @@ import { toast, ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 import "../css/OnlineLoanApplication.css";
 import KRBLogo from "../img/KRBLogo.png";
-import { Navigate, useNavigate } from "react-router-dom";
+import KrbsacoLoader from "./KrbsacoLoader";
+import { useNavigate } from "react-router-dom";
 import { authorizedFetch } from "../js/authorizedFetch";
 
 function OnlineLoanApplication() {
@@ -23,7 +24,7 @@ function OnlineLoanApplication() {
     isError: false,
     isSuccess: false,
   });
-  const [loanApplicationData, setLoanApplicationData] = useState(null);
+  const [expandedLoan, setExpandedLoan] = useState(null);
   const navigate = useNavigate();
 
   const memberNo = sessionStorage.getItem("memberNo");
@@ -42,21 +43,25 @@ function OnlineLoanApplication() {
     const fetchLoanProducts = async () => {
       try {
         const response = await authorizedFetch(`/api/loan-products/`, {
-          method: 'GET'
+          method: "GET",
         });
 
         if (!response.ok) throw new Error("Failed to fetch loan products");
 
         const data = await response.json();
-        // Process the data to extract numeric values from strings
-        const processedData = data.map(loan => ({
-          ...loan,
-          maxAmount: parseNumber(loan.max_amount),
-          minAmount: 0, // Assuming minimum is 0 if not provided
-          maxInstallments: parseInt(loan.term.replace('M', '')) || 60, // Extract months from term
-          interestRate: parseFloat(loan.interest_rate) || 0
-        }));
-        
+        const processedData = data
+          .map((loan) => ({
+            ...loan,
+            maxAmount: parseNumber(loan.max_amount),
+            minAmount: 0,
+            maxInstallments: parseInt(loan.term.replace("M", "")) || 60,
+            interestRate: parseFloat(loan.interest_rate) || 0,
+            category: getLoanTypeCategory(loan.product_description),
+          }))
+          .sort((a, b) =>
+            a.product_description.localeCompare(b.product_description)
+          );
+
         setLoanProducts(processedData);
         setFilteredProducts(processedData);
       } catch (error) {
@@ -84,8 +89,7 @@ function OnlineLoanApplication() {
 
     if (filterTerm !== "all") {
       results = results.filter((loan) => {
-        const desc = loan.product_description.toLowerCase();
-        return desc.includes(filterTerm.toLowerCase());
+        return loan.category === filterTerm;
       });
     }
 
@@ -94,8 +98,22 @@ function OnlineLoanApplication() {
 
   const parseNumber = (value) => {
     if (!value) return 0;
-    // Remove commas and convert to number
     return parseFloat(value.toString().replace(/,/g, ""));
+  };
+
+  const getLoanTypeCategory = (description) => {
+    const desc = description.toLowerCase();
+    if (desc.includes("emergency")) return "emergency";
+    if (desc.includes("instant")) return "quick";
+    if (desc.includes("school")) return "school";
+    if (desc.includes("development")) return "development";
+    if (desc.includes("flexi")) return "quick";
+    if (desc.includes("investment")) return "development";
+    return "normal";
+  };
+
+  const toggleLoanDetails = (loanCode) => {
+    setExpandedLoan(expandedLoan === loanCode ? null : loanCode);
   };
 
   const handleApplyClick = (loan) => {
@@ -115,8 +133,6 @@ function OnlineLoanApplication() {
   const validateInputs = () => {
     if (!selectedLoan) return false;
 
-    const minAmount = selectedLoan.minAmount;
-    const maxAmount = selectedLoan.maxAmount;
     const amount = parseFloat(loanAmount);
     const period = parseInt(repaymentPeriod);
 
@@ -125,9 +141,9 @@ function OnlineLoanApplication() {
       return false;
     }
 
-    if (amount < minAmount || amount > maxAmount) {
+    if (amount < selectedLoan.minAmount || amount > selectedLoan.maxAmount) {
       toast.error(
-        `Amount must be between Ksh ${minAmount.toLocaleString()} and Ksh ${maxAmount.toLocaleString()}`
+        `Amount must be between Ksh ${selectedLoan.minAmount.toLocaleString()} and Ksh ${selectedLoan.maxAmount.toLocaleString()}`
       );
       return false;
     }
@@ -165,7 +181,6 @@ function OnlineLoanApplication() {
       repayment_period: parseInt(repaymentPeriod),
     };
 
-    setLoanApplicationData(payload);
     try {
       const loanResponse = await authorizedFetch(`/api/apply-loan/`, {
         method: "POST",
@@ -199,19 +214,10 @@ function OnlineLoanApplication() {
     }
   };
 
-  const getLoanTypeCategory = (description) => {
-    const desc = description.toLowerCase();
-    if (desc.includes("emergency")) return "emergency";
-    if (desc.includes("instant")) return "quick";
-    if (desc.includes("school")) return "school";
-    if (desc.includes("development")) return "development";
-    if (desc.includes("flexi")) return "quick";
-    if (desc.includes("investment")) return "development";
-    return "normal";
-  };
+  if (loading) return <KrbsacoLoader />;
 
   return (
-    <div className="onlineloanapplication-maincontainer">
+    <div className="krb-loan-application-container">
       <ToastContainer
         position="top-right"
         autoClose={5000}
@@ -224,29 +230,30 @@ function OnlineLoanApplication() {
         pauseOnHover
         theme="colored"
       />
-      <div className="maincontainer">
-        <div className="header-section">
-          <div className="logo-container">
-            <img src={KRBLogo} alt="KRB Logo" className="krb-logo" />
-            <div className="sacco-name">Kenya Road Board Sacco</div>
+      <div className="krb-loan-application-content">
+        <div className="krb-loan-header-section">
+          <div className="krb-loan-logo-container">
+            <img src={KRBLogo} alt="KRB Logo" className="krb-loan-logo" />
+            <div className="krb-loan-sacco-name">Kenya Road Board Sacco</div>
           </div>
-          <h1 className="page-title">Online Loan Application</h1>
+          <h1 className="krb-loan-page-title">Online Loan Application</h1>
         </div>
 
-        {/* Search and Filter Section */}
-        <div className="search-filter-container">
-          <div className="search-box">
+        <div className="krb-loan-search-filter-container">
+          <div className="krb-loan-search-box">
             <input
               type="text"
               placeholder="Search by loan name or code..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
+              aria-label="Search loan products"
             />
           </div>
-          <div className="filter-options">
+          <div className="krb-loan-filter-options">
             <select
               value={filterTerm}
               onChange={(e) => setFilterTerm(e.target.value)}
+              aria-label="Filter loan products"
             >
               <option value="all">All Loan Types</option>
               <option value="emergency">Emergency</option>
@@ -259,12 +266,12 @@ function OnlineLoanApplication() {
         </div>
 
         {loading ? (
-          <div className="loading-state">
-            <div className="spinner"></div>
+          <div className="krb-loan-loading-state">
+            <div className="krb-loan-spinner"></div>
             <p>Loading loan products...</p>
           </div>
         ) : filteredProducts.length === 0 ? (
-          <div className="no-results">
+          <div className="krb-loan-no-results">
             <img src="/img/no-results.svg" alt="No results" />
             <p>No loan products found matching your criteria</p>
             {(searchTerm || filterTerm !== "all") && (
@@ -273,7 +280,7 @@ function OnlineLoanApplication() {
                   setSearchTerm("");
                   setFilterTerm("all");
                 }}
-                className="clear-filters"
+                className="krb-loan-clear-filters"
               >
                 Clear Filters
               </button>
@@ -281,94 +288,112 @@ function OnlineLoanApplication() {
           </div>
         ) : (
           <div
-            className={`loan-products-container ${
-              isMobile ? "mobile-view" : "desktop-view"
+            className={`krb-loan-products-grid ${
+              isMobile ? "krb-loan-mobile-view" : "krb-loan-desktop-view"
             }`}
           >
             {filteredProducts.map((loan) => (
-              <details key={loan.loan_code} className="loan-product">
-                <summary>
-                  <span className="loan-title">{loan.product_description}</span>
-                  <span className="loan-code">{loan.loan_code}</span>
-                </summary>
-                <div className="loan-details">
-                  <div className="detail-row">
-                    <span className="detail-label">Amount Range:</span>
-                    <span className="detail-value">
+              <div
+                key={loan.loan_code}
+                className={`krb-loan-product-card ${
+                  expandedLoan === loan.loan_code ? "krb-loan-expanded" : ""
+                }`}
+              >
+                <div
+                  className="krb-loan-product-header"
+                  onClick={() => toggleLoanDetails(loan.loan_code)}
+                >
+                  <div className="krb-loan-product-title">
+                    {loan.product_description}
+                  </div>
+                  <div className="krb-loan-product-code">{loan.loan_code}</div>
+                  <div className="krb-loan-expand-icon">
+                    {expandedLoan === loan.loan_code ? "−" : "+"}
+                  </div>
+                </div>
+                <div className="krb-loan-product-details">
+                  <div className="krb-loan-detail-row">
+                    <span className="krb-loan-detail-label">Amount Range:</span>
+                    <span className="krb-loan-detail-value">
                       Ksh 0 - Ksh {loan.maxAmount.toLocaleString()}
                     </span>
                   </div>
-                  <div className="detail-row">
-                    <span className="detail-label">Interest Rate:</span>
-                    <span className="detail-value">
+                  <div className="krb-loan-detail-row">
+                    <span className="krb-loan-detail-label">Interest Rate:</span>
+                    <span className="krb-loan-detail-value">
                       {loan.interestRate}%
                     </span>
                   </div>
-                  <div className="detail-row">
-                    <span className="detail-label">Max Period:</span>
-                    <span className="detail-value">
+                  <div className="krb-loan-detail-row">
+                    <span className="krb-loan-detail-label">Max Period:</span>
+                    <span className="krb-loan-detail-value">
                       {loan.maxInstallments} months
                     </span>
                   </div>
-                  <div className="detail-row">
-                    <span className="detail-label">Repayment Type:</span>
-                    <span className="detail-value">
+                  <div className="krb-loan-detail-row">
+                    <span className="krb-loan-detail-label">Repayment Type:</span>
+                    <span className="krb-loan-detail-value">
                       {loan.repayment_type}
                     </span>
                   </div>
-                  <div className="detail-row">
-                    <span className="detail-label">Frequency:</span>
-                    <span className="detail-value">
+                  <div className="krb-loan-detail-row">
+                    <span className="krb-loan-detail-label">Frequency:</span>
+                    <span className="krb-loan-detail-value">
                       {loan.repayment_frequency}
                     </span>
                   </div>
                   <button
                     onClick={() => handleApplyClick(loan)}
-                    className="apply-btn"
+                    className="krb-loan-apply-btn"
                   >
                     Apply Now
                   </button>
                 </div>
-              </details>
+              </div>
             ))}
           </div>
         )}
       </div>
 
       {isModalOpen && selectedLoan && (
-        <div className="modal-backdrop">
-          <div className="modal-content">
-            <div className="modal-header">
+        <div className="krb-loan-modal-backdrop">
+          <div className="krb-loan-modal-content">
+            <div className="krb-loan-modal-header">
               <h2>Apply for {selectedLoan.product_description}</h2>
-              <button className="modal-close" onClick={closeModal}>
+              <button
+                className="krb-loan-modal-close"
+                onClick={closeModal}
+                aria-label="Close modal"
+              >
                 &times;
               </button>
             </div>
-            <div className="modal-body">
+            <div className="krb-loan-modal-body">
               <form onSubmit={handleSubmit}>
-                <div className="form-group">
+                <div className="krb-loan-form-group">
                   <label>Member Number</label>
                   <input
                     type="text"
                     value={memberNo}
                     readOnly
-                    className="form-control"
+                    className="krb-loan-form-control"
                   />
                 </div>
 
-                <div className="form-group">
+                <div className="krb-loan-form-group">
                   <label>Loan Type</label>
                   <input
                     type="text"
                     value={`${selectedLoan.loan_code} - ${selectedLoan.product_description}`}
                     readOnly
-                    className="form-control"
+                    className="krb-loan-form-control"
                   />
                 </div>
 
-                <div className="form-group">
+                <div className="krb-loan-form-group">
                   <label>
-                    Loan Amount (KES) - Range: Ksh 0 to {selectedLoan.maxAmount.toLocaleString()}
+                    Loan Amount (KES) - Range: Ksh 0 to{" "}
+                    {selectedLoan.maxAmount.toLocaleString()}
                   </label>
                   <input
                     type="number"
@@ -378,13 +403,14 @@ function OnlineLoanApplication() {
                     min="0"
                     max={selectedLoan.maxAmount}
                     required
-                    className="form-control"
+                    className="krb-loan-form-control"
                   />
                 </div>
 
-                <div className="form-group">
+                <div className="krb-loan-form-group">
                   <label>
-                    Repayment Period (Months) - Max: {selectedLoan.maxInstallments}
+                    Repayment Period (Months) - Max:{" "}
+                    {selectedLoan.maxInstallments}
                   </label>
                   <input
                     type="number"
@@ -394,51 +420,53 @@ function OnlineLoanApplication() {
                     min="1"
                     max={selectedLoan.maxInstallments}
                     required
-                    className="form-control"
+                    className="krb-loan-form-control"
                   />
                 </div>
 
-                <div className="form-group">
+                <div className="krb-loan-form-group">
                   <label>Purpose of Loan</label>
                   <textarea
                     placeholder="Briefly explain why you need this loan..."
                     value={loanPurpose}
                     onChange={(e) => setLoanPurpose(e.target.value)}
                     required
-                    className="form-control"
+                    className="krb-loan-form-control"
                     rows="4"
                   ></textarea>
                 </div>
 
-                <div className="form-group">
+                <div className="krb-loan-form-group">
                   <label>Interest Rate</label>
                   <input
                     type="text"
                     value={`${selectedLoan.interestRate}%`}
                     readOnly
-                    className="form-control"
+                    className="krb-loan-form-control"
                   />
                 </div>
 
                 {submitStatus.message && (
                   <div
-                    className={`form-message ${
-                      submitStatus.isError ? "error" : "success"
+                    className={`krb-loan-form-message ${
+                      submitStatus.isError
+                        ? "krb-loan-error"
+                        : "krb-loan-success"
                     }`}
                   >
                     {submitStatus.message}
                   </div>
                 )}
 
-                <div className="form-actions">
+                <div className="krb-loan-form-actions">
                   <button
                     type="button"
                     onClick={closeModal}
-                    className="btn btn-secondary"
+                    className="krb-loan-btn-secondary"
                   >
                     Cancel
                   </button>
-                  <button type="submit" className="btn btn-primary">
+                  <button type="submit" className="krb-loan-btn-primary">
                     Submit Application
                   </button>
                 </div>

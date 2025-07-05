@@ -6,12 +6,16 @@ import { toast, ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 import "../css/AppliedLoans.css";
 import { authorizedFetch } from "../js/authorizedFetch.js";
+import KrbsacoLoader from "./KrbsacoLoader";
+import ConfirmModal from "./ConfirmModal";
 
 function AppliedLoans() {
   const [loans, setLoans] = useState([]);
   const [loading, setLoading] = useState(true);
   const [selectedLoan, setSelectedLoan] = useState(null);
   const [showModal, setShowModal] = useState(false);
+  const [showConfirmModal, setShowConfirmModal] = useState(false);
+  const [loanToDelete, setLoanToDelete] = useState(null);
 
   const vite_baseurl = import.meta.env.VITE_BASE_URL;
   const memberNo = sessionStorage.getItem("memberNo");
@@ -19,31 +23,37 @@ function AppliedLoans() {
   useEffect(() => {
     const fetchLoans = async () => {
       try {
-        const response = await authorizedFetch(`/api/applied-loans/?member_no=${memberNo}`,{
-          method: 'GET'
-        }
+        const response = await authorizedFetch(
+          `/api/applied-loans/?member_no=${memberNo}`,
+          {
+            method: "GET",
+          }
         );
         if (!response.ok) throw new Error("Failed to fetch");
 
         const data = await response.json();
 
-        const mappedLoans = data.loans.map((item) => ({
-          id: item.LoanNo,
-          productType: item.ProductType,
-          productName: item.ProductName || "N/A",
-          amount: Number(item.RequestedAmount.replace(/,/g, "")),
-          interestRate: parseFloat(item.InterestRate),
-          installments: parseInt(item.Installments),
-          interestMethod:
-            item.InterestCalculationMethod === "0"
-              ? "Flat Rate"
-              : "Reducing Balance",
-        }));
+        const mappedLoans = data.loans
+          .filter((item) => item.LoanApplicationStatus !== "Deleted")
+          .map((item) => ({
+            id: item.LoanNo,
+            productType: item.ProductType,
+            productName: item.ProductName || "N/A",
+            amount: Number(item.RequestedAmount.replace(/,/g, "")),
+            interestRate: parseFloat(item.InterestRate),
+            installments: parseInt(item.Installments),
+            interestMethod:
+              item.InterestCalculationMethod === "0"
+                ? "Flat Rate"
+                : "Reducing Balance",
+            status: item.LoanApplicationStatus,
+            applicationDate: item.ApplicationDate || "N/A",
+          }));
+        console.log(mappedLoans);
 
         setLoans(mappedLoans);
       } catch (error) {
         toast.error("Failed to load loan applications");
-        console.error("Error fetching loans:", error);
       } finally {
         setLoading(false);
       }
@@ -57,37 +67,39 @@ function AppliedLoans() {
     }
   }, [vite_baseurl, memberNo]);
 
-  const handleDelete = async (loanId) => {
-    const confirmDelete = window.confirm(
-      `Are you sure you want to delete loan ${loanId}?`
-    );
-    if (!confirmDelete) return;
+  const confirmDeleteLoan = (loanId) => {
+    setLoanToDelete(loanId);
+    setShowConfirmModal(true);
+  };
 
+  const handleDeleteConfirmed = async () => {
     try {
-      const response = await authorizedFetch(
-        `/api/delete-loan/`,
-        {
-          method: "POST",
-          body: JSON.stringify({
-            memberNumber: memberNo,
-            loanNumber: loanId,
-          }),
-        }
-      );
+      const payload = {
+        memberNumber: memberNo,
+        loanNumber: loanToDelete,
+      };
+
+      const response = await authorizedFetch(`/api/delete-loan/`, {
+        method: "POST",
+        body: JSON.stringify(payload),
+      });
+
+      const text = await response.text();
+      const errorData = text ? JSON.parse(text) : {};
 
       if (!response.ok) {
-        const text = await response.text();
-        const errorData = text
-          ? JSON.parse(text)
-          : { message: "Failed to delete loan" };
-        throw new Error(errorData.message);
+        console.error("Delete Loan Error:", errorData);
+        throw new Error(errorData.message || "Failed to delete loan");
       }
 
-      setLoans((prev) => prev.filter((loan) => loan.id !== loanId));
-      toast.success(`Loan ${loanId} deleted successfully`);
+      // Remove loan from UI
+      setLoans((prev) => prev.filter((loan) => loan.id !== loanToDelete));
+      toast.success(`Loan ${loanToDelete} deleted successfully`);
     } catch (err) {
       toast.error(err.message || "Error deleting loan");
-      console.error("Delete error:", err);
+    } finally {
+      setShowConfirmModal(false);
+      setLoanToDelete(null);
     }
   };
 
@@ -109,9 +121,14 @@ function AppliedLoans() {
       Rejected: "status-rejected",
     };
     return (
-      <span className={`status-badge ${statusClasses[status]}`}>{status}</span>
+      <span className={`status-badge ${statusClasses[status] || ""}`}>
+        {status}
+      </span>
     );
   };
+
+  // ✅ Show loading page first
+  if (loading) return <KrbsacoLoader />;
 
   return (
     <div className="applied-loans-container">
@@ -125,13 +142,11 @@ function AppliedLoans() {
         <h1 className="page-title">Applied Loans</h1>
       </div>
 
-      
-        <div className="header-content">
-          <Link to="/Home/loan-application" className="new-loan-btn">
-            <i className="fas fa-plus"></i> Apply for New Loan
-          </Link>
-        </div>
-     
+      <div className="header-content">
+        <Link to="/Home/loan-application" className="new-loan-btn">
+          <i className="fas fa-plus"></i> Apply for New Loan
+        </Link>
+      </div>
 
       <div className="notification">
         <small>
@@ -141,12 +156,7 @@ function AppliedLoans() {
       </div>
 
       <main className="loans-content">
-        {loading ? (
-          <div className="loading-state">
-            <div className="spinner"></div>
-            <p>Loading your loan applications...</p>
-          </div>
-        ) : loans.length === 0 ? (
+        {loans.length === 0 ? (
           <div className="empty-state">
             <i className="fas fa-file-invoice-dollar empty-icon"></i>
             <h3>No Loan Applications Found</h3>
@@ -169,8 +179,7 @@ function AppliedLoans() {
                     <th>Amount</th>
                     <th>Interest Rate</th>
                     <th>Installments</th>
-                    <th></th>
-                    <th></th>
+                    <th>Status</th>
                     <th>Actions</th>
                   </tr>
                 </thead>
@@ -194,7 +203,6 @@ function AppliedLoans() {
                       <td data-label="Interest Rate">{loan.interestRate}%</td>
                       <td data-label="Installments">{loan.installments}</td>
                       <td data-label="Status">{getStatusBadge(loan.status)}</td>
-                      <td data-label="Date Applied">{loan.applicationDate}</td>
                       <td data-label="Actions" className="actions-cell">
                         <button
                           className="view-btn"
@@ -204,7 +212,7 @@ function AppliedLoans() {
                         </button>
                         <button
                           className="delete-btn"
-                          onClick={() => handleDelete(loan.id)}
+                          onClick={() => confirmDeleteLoan(loan.id)}
                         >
                           <i className="fas fa-trash"></i> Delete
                         </button>
@@ -220,6 +228,17 @@ function AppliedLoans() {
 
       {showModal && selectedLoan && (
         <LoanDetailsModal loan={selectedLoan} onClose={closeModal} />
+      )}
+      {showConfirmModal && (
+        <ConfirmModal
+          title="Delete Loan Application"
+          message={`Are you sure you want to delete loan ${loanToDelete}?`}
+          onConfirm={handleDeleteConfirmed}
+          onCancel={() => {
+            setShowConfirmModal(false);
+            setLoanToDelete(null);
+          }}
+        />
       )}
     </div>
   );

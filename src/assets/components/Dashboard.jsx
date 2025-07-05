@@ -15,6 +15,7 @@ import {
   IoLogoWhatsapp,
   IoMailOutline,
 } from "react-icons/io5";
+import KrbsacoLoader from "./KrbsacoLoader";
 import { IoIosNotifications } from "react-icons/io";
 import { FaMoneyBillWave, FaUserTie } from "react-icons/fa";
 import "../css/Dashboard.css";
@@ -35,6 +36,7 @@ function Dashboard() {
   const [error, setError] = useState(null);
   const [isDrawerOpen, setIsDrawerOpen] = useState(false);
   const [requests, setRequests] = useState();
+  const [isLoanDrawerOpen, setIsLoanDrawerOpen] = useState(false);
 
   const memberNo = sessionStorage.getItem("memberNo");
 
@@ -103,7 +105,6 @@ function Dashboard() {
         );
 
         const data = await response.json();
-        console.log("Guarantor Request Data:", data);
 
         if (data?.count !== undefined) {
           setRequests(data.count);
@@ -171,12 +172,6 @@ function Dashboard() {
       icon: <IoPersonOutline size={24} />,
       color: "#ec4899",
     },
-    {
-      label: "Total Arrears",
-      value: memberData ? formatCurrency(memberData.TotalArrears) : "0.00",
-      icon: <IoIdCardOutline size={24} />,
-      color: "#f97316",
-    },
   ];
 
   const newsItems = [
@@ -197,7 +192,7 @@ function Dashboard() {
   ];
 
   if (loading) {
-    return <div className="dashboard-loading">Loading member data...</div>;
+    return <KrbsacoLoader />;
   }
 
   if (error) {
@@ -244,14 +239,6 @@ function Dashboard() {
         </div>
         <div className="right">
           <div className="usersection">
-            {/* <img
-              src={KRBLogo}
-              alt="User Logo"
-              className="user-profile-picture"
-            />
-            <small className="users-name">
-              {sessionStorage.getItem("fullName")}
-            </small> */}
             <div style={{ position: "relative" }}>
               <Link to="/Home/guarantor-request">
                 <IoIosNotifications style={{ cursor: "pointer" }} />
@@ -304,9 +291,20 @@ function Dashboard() {
                 <strong>Contribution:</strong> Ksh{" "}
                 {deductionsData.contributions?.monthlyContribution || "0.00"}
               </p>
-              <p>
+              <p style={{ display: "flex", alignItems: "center", gap: "6px" }}>
                 <strong>Loan Repayments:</strong> Ksh{" "}
                 {deductionsData.summary?.totalLoanRepayments || "0.00"}
+                <span
+                  title="View breakdown"
+                  style={{
+                    cursor: "pointer",
+                    color: "#2563eb",
+                    fontSize: "16px",
+                  }}
+                  onClick={() => setIsLoanDrawerOpen(true)}
+                >
+                  ℹ️
+                </span>
               </p>
               <p>
                 <strong>Total Deductions:</strong> Ksh{" "}
@@ -337,6 +335,44 @@ function Dashboard() {
               ))}
             </div>
           </section>
+        )}
+        {isLoanDrawerOpen && (
+          <div
+            className="loan-drawer-overlay"
+            onClick={() => setIsLoanDrawerOpen(false)}
+          >
+            <div className="loan-drawer" onClick={(e) => e.stopPropagation()}>
+              <div className="drawer-header">
+                <h3>Loan Repayment Breakdown</h3>
+                <button
+                  className="close-btn"
+                  onClick={() => setIsLoanDrawerOpen(false)}
+                >
+                  ✖
+                </button>
+              </div>
+              <div className="drawer-body">
+                {deductionsData?.loanDeductions?.length > 0 ? (
+                  deductionsData.loanDeductions.map((loan, index) => (
+                    <div key={index} className="drawer-item">
+                      <p>
+                        <strong>Loan No:</strong> {loan.loanNumber}
+                      </p>
+                      <p>
+                        <strong>Type:</strong> {loan.loanType}
+                      </p>
+                      <p>
+                        <strong>Monthly Repayment:</strong> Ksh{" "}
+                        {loan.monthlyRepayment}
+                      </p>
+                    </div>
+                  ))
+                ) : (
+                  <p>No loan deduction data available.</p>
+                )}
+              </div>
+            </div>
+          </div>
         )}
       </div>
 

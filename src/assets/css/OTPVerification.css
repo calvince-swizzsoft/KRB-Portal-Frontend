@@ -175,3 +175,14 @@
   }
   
 }
+.otp-error {
+  border: 2px solid red;
+  background-color: #fff5f5;
+}
+
+.error-message {
+  color: red;
+  font-size: 0.9rem;
+  margin-top: 5px;
+  text-align: center;
+}

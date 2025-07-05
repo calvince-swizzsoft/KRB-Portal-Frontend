@@ -2,15 +2,16 @@ import React, { useEffect, useState } from 'react';
 import banner from "../img/KRBLogo.png";
 import "../css/GurantorStatement.css";
 import { authorizedFetch } from '../js/authorizedFetch';
+import KrbsacoLoader from "./KrbsacoLoader";
 
 function GurantorStatement() {
   const [pdfUrl, setPdfUrl] = useState(null);
   const [error, setError] = useState(null);
   const [loading, setLoading] = useState(false);
   const [isMobile, setIsMobile] = useState(false);
+  
 
   const memberNo = sessionStorage.getItem("memberNo");
-  const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
 
   useEffect(() => {
     const checkIfMobile = () => {
@@ -71,6 +72,8 @@ function GurantorStatement() {
   if (!memberNo) {
     return <div className="error-message">Error: No member number found</div>;
   }
+
+  if(loading) return <KrbsacoLoader/>;
 
   return (
     <div className="statement-container">

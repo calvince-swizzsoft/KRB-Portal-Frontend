@@ -129,8 +129,8 @@ const OTPVerification = () => {
           <div className="otp-icon">
             <img src={Logo} alt="Company Logo" className="logo-image" />
           </div>
-          <h2>Verify OTP</h2>
-          <p>Enter the 4-digit code sent to your registered number</p>
+          <h2>Verify your One Time Passkey</h2>
+          <p>Enter the 4-digit code sent to your registered number </p>
         </div>
 
         <form onSubmit={handleSubmit}>
@@ -160,7 +160,7 @@ const OTPVerification = () => {
           className={errors.password ? "error" : ""}
           placeholder="Enter your new password"
         />
-        <label style={{ display: "flex", marginTop: "5px",width: "100%",fontSize: "16px"}}>
+        <label style={{ display: "flex",alignContent: "center",justifyContent: "centre", marginTop: "5px",width: "40%",fontSize: "16px"}}>
           <input
             type="checkbox"
             style={{height: "15px",width: "30px"}}
@@ -182,7 +182,7 @@ const OTPVerification = () => {
           className={errors.confirmPassword ? "error" : ""}
           placeholder="Re-enter your password"
         />
-        <label style={{ display: "flex", marginTop: "5px",width: "100%",fontSize: "16px" }}>
+        <label style={{ display: "flex", marginTop: "5px",width: "40%",fontSize: "16px" }}>
           <input
             type="checkbox"
             style={{height: "15px",width: "30px"}}

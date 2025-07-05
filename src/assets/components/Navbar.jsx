@@ -68,6 +68,7 @@ const Navbar = ({ isOpen, setIsOpen, onLinkClick }) => {
 
   const [memberName, setMemberName] = useState("");
   const [memberNumber, setMemberNumber] = useState("");
+  const [profilePic,setProfilePic] = useState("")
 
   useEffect(() => {
     const fetchMemberProfile = async () => {
@@ -87,8 +88,9 @@ const Navbar = ({ isOpen, setIsOpen, onLinkClick }) => {
         const data = await response.json();
         const profile = data.profile;
 
-        setMemberName(profile.profile.FullName);
-        setMemberNumber(profile.profile.MemberNumber);
+        setMemberName(profile.FullName);
+        setMemberNumber(profile.MemberNumber);
+        setProfilePic(profile.ImageBase64)
       } catch (error) {
         console.error("Error fetching member profile:", error);
       }
@@ -223,7 +225,11 @@ const Navbar = ({ isOpen, setIsOpen, onLinkClick }) => {
       <div className="navbar-footer">
         <div className="user-profile">
           <div className="user-avatar">
-            <img src={Logo} alt="Profile" className="avatar-image" />
+            <img
+              src={profilePic ? `data:image/jpeg;base64,${profilePic}` : Logo}
+              alt="Profile"
+              className="avatar-image"
+            />
             <div className="online-status"></div>
           </div>
           <div className="user-details">

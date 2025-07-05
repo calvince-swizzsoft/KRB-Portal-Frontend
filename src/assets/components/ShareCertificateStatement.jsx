@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react';
 import banner from "../img/KRBLogo.png";
 import "../css/GurantorStatement.css";
 import { authorizedFetch } from '../js/authorizedFetch';
+import KrbsacoLoader from './KrbsacoLoader';
 
 function ShareCertificateStatement() {
   const [pdfUrl, setPdfUrl] = useState(null);
@@ -10,7 +11,6 @@ function ShareCertificateStatement() {
   const [isMobile, setIsMobile] = useState(false);
 
   const memberNo = sessionStorage.getItem("memberNo");
-  const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
 
   useEffect(() => {
     const checkIfMobile = () => {
@@ -34,7 +34,7 @@ function ShareCertificateStatement() {
         setLoading(true);
         setError(null);
 
-        const response = await authorizedFetch(`$/api/member-share-certificate/?member_no=${memberNo}`,
+        const response = await authorizedFetch(`/api/member-share-certificate/?member_no=${memberNo}`,
           {
             method: "GET",
           }
@@ -71,6 +71,8 @@ function ShareCertificateStatement() {
   if (!memberNo) {
     return <div className="error-message">Error: No member number found</div>;
   }
+
+  if(loading) return <KrbsacoLoader/>;
 
   return (
     <div className="statement-container">

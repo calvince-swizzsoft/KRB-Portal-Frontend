@@ -1,120 +1,115 @@
 import React, { useState, useRef, useEffect } from "react";
 import { ToastContainer, toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
-import axios from "axios";
 import "../css/OTPVerification.css";
 import Logo from "../img/KRBLogo.png";
 import { useNavigate } from "react-router-dom";
+import { authorizedFetch } from "../js/authorizedFetch";
 
 const LoginOtpVerification = () => {
-  // State management
   const [otp, setOtp] = useState(["", "", "", ""]);
   const [errors, setErrors] = useState({});
   const [isLoading, setIsLoading] = useState(false);
   const otpInputs = useRef([]);
   const navigate = useNavigate();
+  const memberNo = sessionStorage.getItem("memberNo");
 
-  // Handle OTP input changes
+  useEffect(() => {
+    if (otpInputs.current[0]) otpInputs.current[0].focus();
+  }, []);
+
   const handleOtpChange = (index, value) => {
-    if (/^\d*$/.test(value)) {
+    if (/^\d?$/.test(value)) {
       const newOtp = [...otp];
       newOtp[index] = value;
       setOtp(newOtp);
+      setErrors({});
 
-      if (value && index < 4) {
+      if (value && index < 3) {
         otpInputs.current[index + 1].focus();
       }
+    } else {
+      toast.error("Only digits (0–9) are allowed in OTP.");
     }
   };
 
-  // Handle paste from clipboard
   const handlePaste = (e) => {
     e.preventDefault();
-    const pasteData = e.clipboardData.getData("text/plain").trim();
+    const pasteData = e.clipboardData.getData("text").trim();
     if (/^\d{4}$/.test(pasteData)) {
       const newOtp = pasteData.split("").slice(0, 4);
       setOtp(newOtp);
       otpInputs.current[3].focus();
+    } else {
+      toast.error("Please paste only a 4-digit numeric OTP.");
     }
   };
 
-  // Handle backspace
   const handleKeyDown = (index, e) => {
     if (e.key === "Backspace" && !otp[index] && index > 0) {
       otpInputs.current[index - 1].focus();
     }
   };
 
-  // Form validation
   const validateForm = () => {
-    const newErrors = {};
-
-    if (otp.join("").length !== 4) {
-      newErrors.otp = "Please enter complete OTP";
+    const joinedOtp = otp.join("");
+    if (!/^\d{4}$/.test(joinedOtp)) {
+      setErrors({ otp: "OTP must be 4 digits only." });
+      return false;
     }
-
-    setErrors(newErrors);
-    return Object.keys(newErrors).length === 0;
+    return true;
   };
 
-  // Handle form submission
   const handleSubmit = async (e) => {
-  e.preventDefault();
-  const member_no = sessionStorage.getItem("memberNo");
+    e.preventDefault();
 
-  if (!validateForm()) return;
+    if (!memberNo) {
+      toast.error("Session expired. Please log in again.");
+      return navigate("/");
+    }
 
-  setIsLoading(true);
-  try {
-    const response = await axios.post(
-      `${import.meta.env.VITE_API_BASE_URL}/api/confirm-otp/`,
-      {
-        memberNumber: member_no,
-        otpCode: otp.join(""),
-      },
-      {
+    if (!validateForm()) return;
+
+    setIsLoading(true);
+
+    try {
+      const response = await authorizedFetch(`/api/confirm-otp/`, {
+        method: "POST",
+        body: JSON.stringify({
+          memberNumber: memberNo,
+          otpCode: otp.join(""),
+        }),
         headers: {
           "Content-Type": "application/json",
         },
+      });
+
+      const result = await response.json();
+      if (!response.ok) {
+        throw new Error(result.message || "Invalid OTP. Try again.");
       }
-    );
 
-    toast.success(response.data.message || "Verification successful!");
-    sessionStorage.setItem("loginOtpVerified","OTPVERIFICATIONCOMPLETE")
-    navigate("/Home");
-  } catch (error) {
-    console.error(error.response?.data);
-    toast.error(
-      error.response?.data?.message ||
-        "Verification failed. Please try again."
-    );
-  } finally {
-    setIsLoading(false);
-  }
-};
-
+      toast.success(result.message || "OTP verified successfully!");
+      sessionStorage.setItem("loginOtpVerified", "OTPVERIFICATIONCOMPLETE");
+      setTimeout(() => navigate("/Home"), 1500);
+    } catch (error) {
+      toast.error(error.message || "OTP verification failed.");
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
   return (
     <div className="otp-verification-container">
-      <ToastContainer
-        position="top-center"
-        autoClose={5000}
-        hideProgressBar={false}
-        newestOnTop={false}
-        closeOnClick
-        rtl={false}
-        pauseOnFocusLoss
-        draggable
-        pauseOnHover
-      />
+      <ToastContainer position="top-center" theme="colored" />
 
       <div className="otp-card">
         <div className="otp-header">
           <div className="otp-icon">
-            <img src={Logo} alt="Company Logo" className="logo-image" />
+            <img src={Logo} alt="KRB Logo" className="logo-image" />
           </div>
           <h2>Verify OTP</h2>
-          <p>Enter the 4-digit code sent to your registered number</p>
+          <p>Enter the 4-digit code sent to your phone</p>
         </div>
 
         <form onSubmit={handleSubmit}>
@@ -129,7 +124,7 @@ const LoginOtpVerification = () => {
                 onPaste={handlePaste}
                 onKeyDown={(e) => handleKeyDown(index, e)}
                 ref={(el) => (otpInputs.current[index] = el)}
-                className={errors.otp ? "error" : ""}
+                className={errors.otp ? "otp-error" : ""}
               />
             ))}
           </div>
