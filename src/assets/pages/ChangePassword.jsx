@@ -1,184 +1,130 @@
-import React, { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
-import { toast } from 'react-toastify';
-import 'react-toastify/dist/ReactToastify.css';
-import { FaEye, FaEyeSlash } from 'react-icons/fa';
-import KRBLogo from '../img/KRBLogo.png';
-import '../css/ChangePassword.css';
-import { authorizedFetch } from '../js/authorizedFetch';
+import React, { useState } from "react";
+import { toast, ToastContainer } from "react-toastify";
+import { useNavigate } from "react-router-dom";
+import "react-toastify/dist/ReactToastify.css";
+import Logo from "../img/KRBLogo.png"; // Make sure to import your logo
+import '../css/ChangePassword.css'
 
 function ChangePassword() {
+  const [memberNumber, setMemberNumber] = useState("");
+  const [idNumber, setIdNumber] = useState("");
+  const [loading, setLoading] = useState(false);
+
   const navigate = useNavigate();
-  const memberNo = sessionStorage.getItem('memberNo');
-  
-  const [formData, setFormData] = useState({
-    currentPassword: '',
-    newPassword: '',
-    confirmPassword: ''
-  });
-
-  const [passwordVisibility, setPasswordVisibility] = useState({
-    currentPassword: false,
-    newPassword: false,
-    confirmPassword: false
-  });
-
-  const [errors, setErrors] = useState({});
-  const [isSubmitting, setIsSubmitting] = useState(false);
-  const togglePasswordVisibility = (field) => {
-    setPasswordVisibility({
-      ...passwordVisibility,
-      [field]: !passwordVisibility[field]
-    });
-  };
-
-  const handleChange = (e) => {
-    const { name, value } = e.target;
-    setFormData({
-      ...formData,
-      [name]: value
-    });
-    // Clear error when user types
-    if (errors[name]) {
-      setErrors({
-        ...errors,
-        [name]: ''
-      });
-    }
-  };
-
-  const validateForm = () => {
-    const newErrors = {};
-    
-    if (!formData.currentPassword) {
-      newErrors.currentPassword = 'Current password is required';
-    }
-    
-    if (!formData.newPassword) {
-      newErrors.newPassword = 'New password is required';
-    } else if (formData.newPassword.length < 8) {
-      newErrors.newPassword = 'Password must be at least 8 characters';
-    }
-    
-    if (formData.newPassword !== formData.confirmPassword) {
-      newErrors.confirmPassword = 'Passwords do not match';
-    }
-    
-    setErrors(newErrors);
-    return Object.keys(newErrors).length === 0;
-  };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    
-    if (!validateForm()) return;
-    
-    setIsSubmitting(true);
-    
+
+    if (!memberNumber || !idNumber) {
+      toast.error("Please fill in all fields.");
+      return;
+    }
+
+    setLoading(true);
+    toast.info("Processing your request...");
+
     try {
-      const response = await authorizedFetch(`/api/change-password/`, {
-        method: 'POST',
-        body: JSON.stringify({
-          member_no: memberNo,
-          current_pass: formData.currentPassword,
-          new_pass: formData.newPassword
-        })
-      });
+      const response = await fetch(
+        `${import.meta.env.VITE_API_BASE_URL}/api/register-member/`,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            member_no: memberNumber,
+            id_no: idNumber,
+          }),
+        }
+      );
 
       const data = await response.json();
 
-      if (!response.ok) {
-        throw new Error(data.message || 'Failed to change password');
-      }
+      if (data.status === "success" && data.service_response === true) {
+        sessionStorage.setItem("memberNo", memberNumber);
+        sessionStorage.setItem("signedup", "true");
 
-      toast.success('Password changed successfully!');
-      
-      // Clear form
-      setFormData({
-        currentPassword: '',
-        newPassword: '',
-        confirmPassword: ''
-      });
-      
-      // Optionally redirect after successful change
-      // navigate('/dashboard');
-      
+        toast.success("Request successful! OTP sent.", {
+          autoClose: 4000,
+          theme: "light",
+        });
+
+        setTimeout(() => {
+          navigate("/OTPVerification");
+        }, 2000);
+      } else {
+        toast.error(data.detail || "Invalid credentials or request failed.", {
+          autoClose: 5000,
+        });
+      }
     } catch (error) {
-      toast.error(error.message || 'An error occurred while changing password');
+      toast.error("Network error. Please try again later.");
+      console.error("ChangePassword error:", error);
     } finally {
-      setIsSubmitting(false);
+      setLoading(false);
     }
   };
 
   return (
     <div className="change-password-container">
-      <div className="password-form-wrapper">
-        <div className="header-section">
+      <ToastContainer
+        position="top-center"
+        autoClose={5000}
+        hideProgressBar={false}
+        newestOnTop={false}
+        closeOnClick
+        rtl={false}
+        pauseOnFocusLoss
+        draggable
+        pauseOnHover
+      />
+
+      <div className="change-password-card">
+        <div className="change-password-header">
           <div className="logo-container">
-            <img src={KRBLogo} alt="KRB Logo" className="krb-logo" />
-            <div className="sacco-name">Kenya Road Board Sacco</div>
+            <img src={Logo} alt="Company Logo" className="logo-image" />
           </div>
-          <h1 className="page-title">Change Password</h1>
+          <h2>Account Recovery</h2>
+          <p>Enter your Member Number and ID Number to receive an OTP</p>
         </div>
 
-        <form onSubmit={handleSubmit} className="password-form">
+        <form onSubmit={handleSubmit}>
           <div className="form-group">
-            <label htmlFor="currentPassword">Current Password</label>
+            <label>Member Number</label>
             <input
-              type="password"
-              id="currentPassword"
-              name="currentPassword"
-              value={formData.currentPassword}
-              onChange={handleChange}
-              className={`form-control ${errors.currentPassword ? 'is-invalid' : ''}`}
-              placeholder="Enter your current password"
+              type="text"
+              value={memberNumber}
+              onChange={(e) => setMemberNumber(e.target.value)}
+              placeholder="Enter your Member Number"
+              required
             />
-            {errors.currentPassword && (
-              <div className="invalid-feedback">{errors.currentPassword}</div>
-            )}
           </div>
 
           <div className="form-group">
-            <label htmlFor="newPassword">New Password</label>
+            <label>ID Number</label>
             <input
-              type="password"
-              id="newPassword"
-              name="newPassword"
-              value={formData.newPassword}
-              onChange={handleChange}
-              className={`form-control ${errors.newPassword ? 'is-invalid' : ''}`}
-              placeholder="Enter your new password"
+              type="text"
+              value={idNumber}
+              onChange={(e) => setIdNumber(e.target.value)}
+              placeholder="Enter your ID Number"
+              required
             />
-            {errors.newPassword && (
-              <div className="invalid-feedback">{errors.newPassword}</div>
-            )}
           </div>
 
-          <div className="form-group">
-            <label htmlFor="confirmPassword">Confirm New Password</label>
-            <input
-              type="password"
-              id="confirmPassword"
-              name="confirmPassword"
-              value={formData.confirmPassword}
-              onChange={handleChange}
-              className={`form-control ${errors.confirmPassword ? 'is-invalid' : ''}`}
-              placeholder="Confirm your new password"
-            />
-            {errors.confirmPassword && (
-              <div className="invalid-feedback">{errors.confirmPassword}</div>
+          <button 
+            type="submit" 
+            className="submit-btn"
+            disabled={loading}
+          >
+            {loading ? (
+              <span className="button-loading">
+                <span className="spinner"></span>
+                Submitting...
+              </span>
+            ) : (
+              "Send OTP"
             )}
-          </div>
-
-          <div className="form-actions">
-            <button
-              type="submit"
-              className="submit-btn"
-              disabled={isSubmitting}
-            >
-              {isSubmitting ? 'Changing...' : 'Change Password'}
-            </button>
-          </div>
+          </button>
         </form>
       </div>
     </div>

@@ -771,6 +771,9 @@ body {
 .support-icon.phone {
   background-color: #3b82f6;
 }
+.support-icon.manual{
+  background-color: #34495e;
+}
 
 .support-icon.email {
   background-color: #f97316;

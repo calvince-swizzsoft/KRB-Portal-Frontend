@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import Logo from "../img/KRBLogo.png";
 import "../css/Userauth.css";
@@ -13,8 +13,13 @@ import {
   FaEyeSlash,
 } from "react-icons/fa";
 import { FiHelpCircle, FiX } from "react-icons/fi";
-import { FaWhatsapp, FaPhone, FaEnvelope, FaQuestionCircle } from "react-icons/fa";
-
+import {
+  FaWhatsapp,
+  FaPhone,
+  FaEnvelope,
+  FaBook,
+  FaQuestionCircle,
+} from "react-icons/fa";
 
 const UserAuth = () => {
   const [isLoginView, setIsLoginView] = useState(true);
@@ -204,6 +209,16 @@ const UserAuth = () => {
             className="support-icon email"
           >
             <FaEnvelope />
+          </a>
+          <a
+            href="/docs/UserManual.pdf"
+            download="UserManual.pdf"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="support-icon manual"
+            title="Download User Manual"
+          >
+            <FaBook />
           </a>
         </div>
 

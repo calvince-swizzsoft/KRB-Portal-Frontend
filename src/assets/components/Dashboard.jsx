@@ -14,6 +14,7 @@ import {
   IoCallOutline,
   IoLogoWhatsapp,
   IoMailOutline,
+  IoBook,
 } from "react-icons/io5";
 import KrbsacoLoader from "./KrbsacoLoader";
 import { IoIosNotifications } from "react-icons/io";
@@ -204,14 +205,14 @@ function Dashboard() {
       <div className="support-container">
         <div className={`support-drawer ${isDrawerOpen ? "open" : ""}`}>
           <a
-            href="https://wa.me/254706126213"
+            href="https://wa.me/+254726907351"
             target="_blank"
             rel="noopener noreferrer"
             className="support-icon whatsapp"
           >
             <FaWhatsapp />
           </a>
-          <a href="tel:+254706126213" className="support-icon phone">
+          <a href="tel:+254726907351" className="support-icon phone">
             <FaPhone />
           </a>
           <a
@@ -219,6 +220,16 @@ function Dashboard() {
             className="support-icon email"
           >
             <FaEnvelope />
+          </a>
+          <a
+            href="/docs/UserManual.pdf"
+            download="UserManual.pdf"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="support-icon manual"
+            title="Download User Manual"
+          >
+            <IoBook />
           </a>
         </div>
 

@@ -79,6 +79,14 @@ const router = createBrowserRouter([
     ),
     errorElement: <ErrorPage />,
   },
+  { 
+    path: "change-password",
+    element: (
+      <SignUpProtectedRoute>
+        <ChangePassword/>
+      </SignUpProtectedRoute>
+    )
+  },
   {
     path: "/Home",
     element: (
@@ -93,7 +101,6 @@ const router = createBrowserRouter([
       { path: "member-profile", element: <MemberProfile /> },
       { path: "member-accounts", element: <MemberAccounts /> },
       { path: "guarantor-request", element: <GuarantorRequest /> },
-      { path: "change-password", element: <ChangePassword /> },
       { path: "loan-balances", element: <LoanBalances /> },
       { path: "loan-application", element: <OnlineLoanApplication /> },
       { path: "AppliedLoans", element: <AppliedLoans /> },

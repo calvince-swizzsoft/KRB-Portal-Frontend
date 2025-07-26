@@ -163,7 +163,7 @@ function Guarantorship() {
           <img src={KRBLogo} alt="KRB Sacco Logo" className="krb-logo" />
           <div className="krb-header-titles">
             <h1>KRB SACCO</h1>
-            <p>Member Profile</p>
+            <p>Gurantorship Requests</p>
           </div>
         </div>
       </div>

@@ -37,20 +37,46 @@ const Navbar = ({ isOpen, setIsOpen, onLinkClick }) => {
     if (onLinkClick) onLinkClick();
   };
 
-  const changepassword = () => {
-    sessionStorage.clear();
+  const changepassword = async () => {
+    const memberNo = sessionStorage.getItem("memberNo");
 
-    toast.success(
-      "For security purposes, please follow the Sign Up process to change your password.",
-      {
-        theme: "light",
-        autoClose: 4000,
+    if (!memberNo) {
+      toast.error("Session expired. Please sign in again.");
+      setTimeout(() => {
+        navigate("/");
+      }, 3000);
+      return;
+    }
+
+    try {
+      const response = await fetch(
+        `${import.meta.env.VITE_API_BASE_URL}/api/send-otp/`,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({ memberNumber: memberNo }),
+        }
+      );
+
+      const data = await response.json();
+      console.log("OTP Response:", data);
+
+      if (response.ok) {
+        sessionStorage.setItem("signedup", "true");
+        sessionStorage.setItem("memberNo", memberNo);
+
+        toast.success("OTP sent successfully!");
+
+        navigate("/change-password");
+      } else {
+        toast.error(data.detail || "Failed to send OTP. Try again.");
       }
-    );
-
-    setTimeout(() => {
-      navigate("/");
-    }, 4500);
+    } catch (error) {
+      toast.error("Network error. Try again later.");
+      console.error("Password change error:", error);
+    }
   };
 
   const handlelogout = () => {

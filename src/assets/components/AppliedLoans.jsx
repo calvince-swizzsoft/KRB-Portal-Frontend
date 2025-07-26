@@ -134,12 +134,12 @@ function AppliedLoans() {
     <div className="applied-loans-container">
       <ToastContainer position="top-right" autoClose={5000} />
 
-      <div className="header-section">
-        <div className="logo-container">
-          <img src={KRBLogo} alt="KRB Logo" className="krb-logo" />
-          <div className="sacco-name">Kenya Road Board Sacco</div>
+      <div className="krb-loan-header-section">
+        <div className="krb-loan-logo-container">
+          <img src={KRBLogo} alt="KRB Logo" className="krb-loan-logo" />
+          <div className="krb-loan-sacco-name">Kenya Road Board Sacco</div>
         </div>
-        <h1 className="page-title">Applied Loans</h1>
+        <h1 className="krb-loan-page-title">Loan Balance</h1>
       </div>
 
       <div className="header-content">
@@ -161,12 +161,6 @@ function AppliedLoans() {
             <i className="fas fa-file-invoice-dollar empty-icon"></i>
             <h3>No Loan Applications Found</h3>
             <p>You haven't applied for any loans yet.</p>
-            <Link
-              to="/dashboard/Loans/OnlineLoanApplication"
-              className="empty-state-btn"
-            >
-              Apply for your first loan
-            </Link>
           </div>
         ) : (
           <div className="loans-table-container">
