@@ -80,11 +80,9 @@ const router = createBrowserRouter([
     errorElement: <ErrorPage />,
   },
   { 
-    path: "change-password",
+    path: "/change-password",
     element: (
-      <SignUpProtectedRoute>
         <ChangePassword/>
-      </SignUpProtectedRoute>
     )
   },
   {

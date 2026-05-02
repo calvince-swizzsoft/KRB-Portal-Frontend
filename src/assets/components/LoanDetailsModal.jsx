@@ -133,45 +133,44 @@ function LoanDetailsModal({ loan, onClose }) {
   };
 
   const addGuarantor = async () => {
-    if (!guarantorDetails.memberNumber) {
-      toast.error("Please select a member");
+  if (!guarantorDetails.memberNumber) {
+    toast.error("Please select a member");
+    return;
+  }
+
+  setIsSubmitting(true);
+  try {
+    const payload = {
+      member_number: guarantorDetails.memberNumber,
+      loan_number: loan.id,
+    };
+
+    const response = await authorizedFetch(`/api/request-guarantorship/`, {
+      method: "POST",
+      body: JSON.stringify(payload),
+    });
+
+    const data = await response.json();
+
+    if (!response.ok || data.success === false) {
+      toast.error(data.message || "Failed to send guarantor request");
       return;
     }
 
-    setIsSubmitting(true);
-    try {
-      const payload = {
-        member_number: guarantorDetails.memberNumber,
-        loan_number: loan.id,
-      };
+    toast.success(data.message);
 
-      const response = await authorizedFetch(
-        `/api/request-guarantorship/`,
-        {
-          method: "POST",
-          body: JSON.stringify(payload),
-        }
-      );
+    setGuarantorDetails({ name: "", memberNumber: "" });
+    setSearchQuery("");
+    setShowAddGuarantor(false);
+    fetchGuarantors();
+  } catch (error) {
+    toast.error("An unexpected error occurred. Please try again.");
+    console.error(error);
+  } finally {
+    setIsSubmitting(false);
+  }
+};
 
-      const data = await response.json();
-
-      if (response.status !== 200) {
-        toast.error(data.message || "Failed to send guarantor request");
-        return;
-      }
-
-      toast.success(data.message || "Guarantor request sent successfully");
-
-      setGuarantorDetails({ name: "", memberNumber: "" });
-      setShowAddGuarantor(false);
-      fetchGuarantors();
-    } catch (error) {
-      toast.error("An unexpected error occurred. Please try again.");
-      console.error("Error sending guarantor request:", error);
-    } finally {
-      setIsSubmitting(false);
-    }
-  };
 
   const removeGuarantor = async (memberNumber) => {
     try {

@@ -25,11 +25,10 @@ function AppliedLoans() {
       try {
         const response = await authorizedFetch(
           `/api/applied-loans/?member_no=${memberNo}`,
-          {
-            method: "GET",
-          }
+          { method: "GET" }
         );
-        if (!response.ok) throw new Error("Failed to fetch");
+
+        if (!response.ok) throw new Error("Failed to fetch loan data");
 
         const data = await response.json();
 
@@ -49,7 +48,6 @@ function AppliedLoans() {
             status: item.LoanApplicationStatus,
             applicationDate: item.ApplicationDate || "N/A",
           }));
-        console.log(mappedLoans);
 
         setLoans(mappedLoans);
       } catch (error) {
@@ -88,7 +86,6 @@ function AppliedLoans() {
       const errorData = text ? JSON.parse(text) : {};
 
       if (!response.ok) {
-        console.error("Delete Loan Error:", errorData);
         throw new Error(errorData.message || "Failed to delete loan");
       }
 

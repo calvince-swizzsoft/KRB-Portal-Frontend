@@ -47,6 +47,13 @@ function MemberProfile() {
   const UpdateProfile = () => {
     if (data?.FullName) {
       sessionStorage.setItem("fullName", data.FullName);
+      // Also store phone and email in sessionStorage
+      if (data?.Phone) {
+        sessionStorage.setItem("phoneNumber", data.Phone);
+      }
+      if (data?.Email) {
+        sessionStorage.setItem("email", data.Email);
+      }
     }
     navigate("/Home/EditProfile");
   };
@@ -78,6 +85,17 @@ function MemberProfile() {
           }, 0);
           console.log(totalAllocation)
           sessionStorage.setItem("totalNomineeAllocation", totalAllocation);
+
+          // Store additional user data in sessionStorage for easy access
+          if (result.profile?.FullName) {
+            sessionStorage.setItem("fullName", result.profile.FullName);
+          }
+          if (result.profile?.Phone) {
+            sessionStorage.setItem("phoneNumber", result.profile.Phone);
+          }
+          if (result.profile?.Email) {
+            sessionStorage.setItem("email", result.profile.Email);
+          }
         } else {
           toast.error("Failed to load member profile.");
         }
@@ -167,8 +185,8 @@ function MemberProfile() {
             <DetailRow icon={<FaIdCard />} label="ID Number" value={data.IDNumber} />
             <DetailRow icon={<FaWallet />} label="Payroll Number" value={data.PayrollNumber} />
             <DetailRow icon={<FaFileSignature />} label="KRA PIN" value={data.KRAPin} />
-            <DetailRow icon={<FaIdCard />} label="NHIF Number" value={data.NHIFNumber || "Not provided"} />
-          </ProfileSection>
+    {/* <DetailRow icon={<FaIdCard />} label="NHIF Number" value={data.NHIFNumber || "Not provided"} /> */}
+    </ProfileSection>
 
           {/* Next of Kin */}
           {nextOfKin.length > 0 && (

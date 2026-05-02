@@ -55,17 +55,17 @@ const EditProfile = () => {
     nominee: false,
   });
 
-  // Form data state
+  // Form data state - Get initial values from sessionStorage
   const member_full_name = sessionStorage.getItem("fullName") || "";
   const memberNumber = sessionStorage.getItem("memberNo") || "";
-  const totalNomineeAllocation = sessionStorage.getItem(
-    "totalNomineeAllocation"
-  );
+  const totalNomineeAllocation = sessionStorage.getItem("totalNomineeAllocation");
+  const member_phone = sessionStorage.getItem("phoneNumber") || "";
+  const member_email = sessionStorage.getItem("email") || "";
 
   const [formData, setFormData] = useState({
     fullNames: member_full_name,
-    phoneNumber: "",
-    email: "",
+    phoneNumber: member_phone,
+    email: member_email,
     iDNumber: "",
     kRAPin: "",
   });
@@ -273,29 +273,23 @@ const EditProfile = () => {
     return age;
   };
 
-  // Validate form
+  // Validate form - Made optional, only validate if field has value
   const validateForm = () => {
     const newErrors = {};
-    if (!formData.phoneNumber.trim()) {
-      newErrors.phoneNumber = "Phone number is required";
-    } else if (!/^\d{10}$/.test(formData.phoneNumber)) {
+    
+    // Only validate phone if it has value
+    if (formData.phoneNumber.trim() && !/^\d{10}$/.test(formData.phoneNumber)) {
       newErrors.phoneNumber = "Phone number must be 10 digits";
     }
 
-    if (!formData.email.trim()) {
-      newErrors.email = "Email is required";
-    } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email)) {
+    // Only validate email if it has value
+    if (formData.email.trim() && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email)) {
       newErrors.email = "Please enter a valid email";
     }
 
-    if (!formData.iDNumber.trim()) {
-      newErrors.iDNumber = "ID number is required";
-    } else if (!/^\d{7,8}$/.test(formData.iDNumber)) {
+    // Only validate ID number if it has value
+    if (formData.iDNumber.trim() && !/^\d{7,8}$/.test(formData.iDNumber)) {
       newErrors.iDNumber = "ID number must be 7 or 8 digits";
-    }
-
-    if (!formData.kRAPin.trim()) {
-      newErrors.kRAPin = "KRA PIN is required";
     }
 
     setErrors(newErrors);
@@ -305,18 +299,18 @@ const EditProfile = () => {
   const saveNextOfKin = async () => {
     try {
       for (const kin of nextOfKins) {
-        // Basic validation for required fields
-        const isValid =
-          kin.name?.trim() &&
-          kin.email?.trim() &&
-          kin.idNumber?.trim() &&
-          kin.phone?.trim() &&
-          kin.relationshipType?.trim() &&
-          kin.dob?.trim() &&
+        // Only save if at least one field is filled
+        const hasData = 
+          kin.name?.trim() ||
+          kin.email?.trim() ||
+          kin.idNumber?.trim() ||
+          kin.phone?.trim() ||
+          kin.relationshipType?.trim() ||
+          kin.dob?.trim() ||
           kin.address?.trim();
 
-        if (!isValid) {
-          toast.error("Please fill in all required fields before saving.");
+        if (!hasData) {
+          toast.info("No next of kin data to save");
           return;
         }
 
@@ -336,14 +330,7 @@ const EditProfile = () => {
         });
 
         if (!response.ok) {
-          const errorText = await response.text();
-          console.error("Next of Kin Save Failed:", {
-            status: response.status,
-            statusText: response.statusText,
-            errorText,
-            kinData: kin,
-          });
-          throw new Error("Failed to save");
+          throw new Error("Failed to save next of kin");
         }
       }
 
@@ -351,7 +338,6 @@ const EditProfile = () => {
       setNextOfKins([]);
     } catch (error) {
       toast.error("Error saving Next of Kin");
-      console.error(error);
     }
   };
 
@@ -370,9 +356,7 @@ const EditProfile = () => {
     
       if (totalAllocation > 100) {
         toast.error(
-          `Total nominee allocation exceeds 100%. Current: ${totalAllocation.toFixed(
-            2
-          )}%`
+          `Total nominee allocation exceeds 100%. Current: ${totalAllocation.toFixed(2)}%`
         );
         return;
       }
@@ -380,22 +364,22 @@ const EditProfile = () => {
       if (totalAllocation < 100 && nominees.length > 0) {
         const remaining = 100 - totalAllocation;
         toast.warning(`Nominee allocation remaining: ${remaining.toFixed(2)}%`);
-        // 👉 DO NOT return here, allow saving to proceed
       }
     
       for (const nominee of nominees) {
-        const isValid =
-          nominee.name?.trim() &&
-          nominee.email?.trim() &&
-          nominee.idNumber?.trim() &&
-          nominee.phone?.trim() &&
-          nominee.relationshipType?.trim() &&
-          nominee.dob?.trim() &&
-          nominee.address?.trim() &&
-          nominee.allocation !== undefined;
-      
-        if (!isValid) {
-          toast.error("Please fill in all required nominee fields.");
+        // Only save if at least one field is filled
+        const hasData = 
+          nominee.name?.trim() ||
+          nominee.email?.trim() ||
+          nominee.idNumber?.trim() ||
+          nominee.phone?.trim() ||
+          nominee.relationshipType?.trim() ||
+          nominee.dob?.trim() ||
+          nominee.address?.trim() ||
+          nominee.allocation > 0;
+
+        if (!hasData) {
+          toast.info("No nominee data to save");
           return;
         }
       
@@ -425,33 +409,22 @@ const EditProfile = () => {
         });
       
         if (!response.ok) {
-          const errorText = await response.text();
-          console.error("Failed to save nominee:", {
-            status: response.status,
-            statusText: response.statusText,
-            errorText,
-            nomineeData: nominee,
-          });
-          toast.error(
-            `Failed to save nominee: ${response.status} ${response.statusText}`
-          );
+          toast.error("Failed to save nominee");
           return;
         }
       }
 
-    sessionStorage.setItem(
-      "totalNomineeAllocation",
-      totalAllocation.toString()
-    );
+      sessionStorage.setItem(
+        "totalNomineeAllocation",
+        totalAllocation.toString()
+      );
 
-    toast.success("Nominees saved successfully");
-    setNominees([]);
-  } catch (error) {
-    console.error("Error saving nominees:", error);
-    toast.error("Error saving nominees");
-  }
+      toast.success("Nominees saved successfully");
+      setNominees([]);
+    } catch (error) {
+      toast.error("Error saving nominees");
+    }
   };
-
 
   // Handle form submission
   const handleSubmit = async (e) => {
@@ -506,8 +479,7 @@ const EditProfile = () => {
         toast.error("Failed to update profile");
       }
     } catch (error) {
-      console.error("Update error:", error);
-      toast.error("An error occurred");
+      toast.error("An error occurred while updating profile");
     } finally {
       setIsSubmitting(false);
     }
@@ -953,7 +925,6 @@ const EditProfile = () => {
                                 e.target.value
                               )
                             }
-                            required
                           />
                         </div>
 
@@ -969,7 +940,6 @@ const EditProfile = () => {
                                 e.target.value
                               )
                             }
-                            required
                           />
                         </div>
 
@@ -978,7 +948,6 @@ const EditProfile = () => {
                           <input
                             type="text"
                             value={kin.idNumber}
-                            required
                             onChange={(e) =>
                               handleNextOfKinChange(
                                 index,
@@ -994,7 +963,6 @@ const EditProfile = () => {
                           <input
                             type="tel"
                             value={kin.phone}
-                            required
                             onChange={(e) =>
                               handleNextOfKinChange(
                                 index,
@@ -1009,7 +977,6 @@ const EditProfile = () => {
                           <label>Relationship</label>
                           <select
                             value={kin.relationshipType}
-                            required
                             onChange={(e) =>
                               handleNextOfKinChange(
                                 index,
@@ -1032,7 +999,6 @@ const EditProfile = () => {
                           <input
                             type="date"
                             value={kin.dob}
-                            required
                             onChange={(e) =>
                               handleNextOfKinChange(
                                 index,
@@ -1048,7 +1014,6 @@ const EditProfile = () => {
                           <input
                             type="text"
                             value={kin.address}
-                            required
                             onChange={(e) =>
                               handleNextOfKinChange(
                                 index,
@@ -1064,7 +1029,6 @@ const EditProfile = () => {
                             <input
                               type="checkbox"
                               checked={kin.isBeneficiary}
-                              required
                               onChange={(e) =>
                                 handleNextOfKinChange(
                                   index,

@@ -67,7 +67,9 @@ const UserAuth = () => {
         }
         setTimeout(() => navigate("/login-otp-verification"), 2000);
       } else {
-        toast.error(data.detail || "Login failed. Please check credentials.");
+        // Capture specific error message from backend
+        const errorMessage = data.detail || data.error || data.message || "Login failed. Please check credentials.";
+        toast.error(errorMessage);
       }
     } catch (error) {
       toast.error("An error occurred. Please try again.");
@@ -89,13 +91,18 @@ const UserAuth = () => {
       );
       const data = await response.json();
 
+      // Check for success response structure
       if (data.status === "success" && data.service_response === true) {
+        // Capture success message from backend
+        const successMessage = data.message || "Registration successful!";
+        toast.success(successMessage);
         sessionStorage.setItem("memberNo", memberNo);
         sessionStorage.setItem("signedup", "true");
-        toast.success("Registration successful!");
         setTimeout(() => navigate("/OTPVerification"), 2000);
       } else {
-        toast.error(data.detail || "Registration failed.");
+        // Capture specific error message from backend
+        const errorMessage = data.error || data.detail || data.message || "Registration failed.";
+        toast.error(errorMessage);
       }
     } catch (error) {
       toast.error("An error occurred. Please try again.");
@@ -164,8 +171,8 @@ const UserAuth = () => {
 
           {isLoginView && (
             <p className="help-text">
-              {/* <FiHelpCircle /> */}
-              {/* <span>Forgotten your password?<span className="resetbutton" onClick={() => navigate("/change-password")}> Reset Password</span></span> */}
+              <FiHelpCircle /> 
+             <span>Forgotten your password?<span className="resetbutton" onClick={() => navigate("/change-password")}> Reset Password</span></span>
             </p>
           )}
 

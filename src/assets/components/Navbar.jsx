@@ -3,7 +3,7 @@ import { Link, useNavigate } from "react-router-dom";
 import {
   FiUser,
   FiFileText,
-  FiDollarSign,
+  FiCreditCard,
   FiPieChart,
   FiHelpCircle,
   FiLogOut,
@@ -152,7 +152,7 @@ const Navbar = ({ isOpen, setIsOpen, onLinkClick }) => {
     },
     {
       id: "loan",
-      icon: <FiDollarSign />,
+      icon: <FiCreditCard />,
       label: "My Loan",
       type: "dropdown",
       links: [

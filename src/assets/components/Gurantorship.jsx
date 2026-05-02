@@ -30,15 +30,35 @@ function Guarantorship() {
     
     if (searchTerm) {
       results = results.filter(request =>
-        request.ApplicantName.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        request.LoanApplicationNo.toLowerCase().includes(searchTerm.toLowerCase())
+        request.ApplicantName?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        request.LoanApplicationNo?.toLowerCase().includes(searchTerm.toLowerCase())
       );
     }
     
     if (filterStatus !== "all") {
-      results = results.filter(request =>
-        request.Status.toLowerCase() === filterStatus.toLowerCase()
-      );
+      results = results.filter(request => {
+        const requestStatus = String(request.Status || "").toLowerCase();
+        const filterStatusLower = filterStatus.toLowerCase();
+        
+        // Handle different possible status values
+        if (filterStatusLower === "pending") {
+          // Pending status: empty, "pending", or any value not 0 or 1
+          return requestStatus === "pending" || 
+                 requestStatus === "" || 
+                 !requestStatus || 
+                 (requestStatus !== "0" && 
+                  requestStatus !== "1" && 
+                  requestStatus !== "approved" && 
+                  requestStatus !== "rejected");
+        } else if (filterStatusLower === "approved") {
+          // Approved status: "0" or "approved"
+          return requestStatus === "0" || requestStatus === "approved";
+        } else if (filterStatusLower === "rejected") {
+          // Rejected status: "1" or "rejected"
+          return requestStatus === "1" || requestStatus === "rejected";
+        }
+        return true;
+      });
     }
     
     setFilteredRequests(results);
@@ -96,30 +116,37 @@ function Guarantorship() {
         return;
       }
 
+      // 0 = Approve, 1 = Reject (as per SOAP service requirement)
       const response = await authorizedFetch(`/api/approve-guarantorship/`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           memberNo: memberNo,
           loanNo: currentLoanNo,
-          approvedStatus: isApproved ? 0 : 1, 
+          approvedStatus: isApproved ? 0 : 1, // 0 = Approve, 1 = Reject
         }),
       });
 
       const data = await response.json();
 
       if (!response.ok) {
-        throw new Error(data.message || "Failed to process request");
+        throw new Error(data.error || data.message || "Failed to process request");
       }
 
-      toast.success(
-        `Guarantorship ${isApproved ? "approved" : "rejected"} successfully`
-      );
+      if (data.success) {
+        toast.success(
+          data.message || `Guarantorship ${isApproved ? "approved" : "rejected"} successfully`
+        );
+      } else {
+        toast.error(
+          data.message || `Failed to ${currentAction} guarantorship request`
+        );
+      }
       
       await fetchGuarantorRequests();
     } catch (error) {
       toast.error(
-        `Failed to ${currentAction} request: ${error.message || "An unexpected error occurred"}`
+        error.message || "An unexpected error occurred"
       );
       console.error("Action error:", error);
     } finally {
@@ -129,17 +156,34 @@ function Guarantorship() {
 
   const getStatusBadge = (status) => {
     const statusMap = {
-      approved: { text: "Approved", className: "status-approved" },
-      rejected: { text: "Rejected", className: "status-rejected" },
-      pending: { text: "Pending", className: "status-pending" }
+      "0": { text: "Approved", className: "status-approved" },
+      "approved": { text: "Approved", className: "status-approved" },
+      "1": { text: "Rejected", className: "status-rejected" },
+      "rejected": { text: "Rejected", className: "status-rejected" },
+      "pending": { text: "Pending", className: "status-pending" },
+      "": { text: "Pending", className: "status-pending" },
     };
     
-    const statusInfo = statusMap[status.toLowerCase()] || statusMap.pending;
+    // Convert status to string and lowercase for comparison
+    const statusStr = String(status || "").toLowerCase();
+    
+    // Find the matching status
+    const statusInfo = statusMap[statusStr] || statusMap.pending;
+    
     return (
       <span className={`status-badge ${statusInfo.className}`}>
         {statusInfo.text}
       </span>
     );
+  };
+
+  // Helper function to check if a request can be approved/rejected
+  const canPerformAction = (request) => {
+    const status = String(request.Status || "").toLowerCase();
+    // Can only act on pending requests
+    return status === "pending" || status === "" || !status || 
+           (status !== "0" && status !== "1" && 
+            status !== "approved" && status !== "rejected");
   };
 
   if (loading) return <KrbsacoLoader />;
@@ -163,13 +207,14 @@ function Guarantorship() {
           <img src={KRBLogo} alt="KRB Sacco Logo" className="krb-logo" />
           <div className="krb-header-titles">
             <h1>KRB SACCO</h1>
-            <p>Gurantorship Requests</p>
+            <p>Guarantorship Requests</p>
           </div>
         </div>
       </div>
 
       <div className="search-filter-container">
         <div className="search-box">
+          <FaSearch className="search-icon" />
           <input
             type="text"
             placeholder="Search by name or loan number..."
@@ -225,35 +270,40 @@ function Guarantorship() {
               </tr>
             </thead>
             <tbody>
-              {filteredRequests.map((request) => (
-                <tr key={`${request.LoanApplicationNo}-${request.ApplicantNo}`}>
-                  <td data-label="Applicant Name">{request.ApplicantName}</td>
-                  <td data-label="Applicant Number">{request.ApplicantNo}</td>
-                  <td data-label="Loan Number">{request.LoanApplicationNo}</td>
-                  <td data-label="Loan Type">{request.LoanTypeDescription}</td>
-                  <td data-label="Repayment Period">{request.LoanRepaymentPeriod}</td>                  
-                  <td data-label="Amount">Ksh {request.LoanRequestedAmount}</td>
-                  <td data-label="Status">{getStatusBadge(request.Status)}</td>
-                  <td data-label="Actions" className="action-buttons">
-                    <button
-                      onClick={() => handleActionClick(request.LoanApplicationNo, true)}
-                      disabled={request.Status.toLowerCase() === "approved"}
-                      className={`accept-btn ${request.Status.toLowerCase() === "approved" ? "disabled" : ""}`}
-                      aria-label={`Approve request from ${request.ApplicantName}`}
-                    >
-                      <FaCheck /> <span className="action-text">Approve</span>
-                    </button>
-                    <button
-                      onClick={() => handleActionClick(request.LoanApplicationNo, false)}
-                      disabled={request.Status.toLowerCase() !== "pending"}
-                      className={`reject-btn ${request.Status.toLowerCase() !== "pending" ? "disabled" : ""}`}
-                      aria-label={`Reject request from ${request.ApplicantName}`}
-                    >
-                      <FaTimes /> <span className="action-text">Reject</span>
-                    </button>
-                  </td>
-                </tr>
-              ))}
+              {filteredRequests.map((request) => {
+                const canAct = canPerformAction(request);
+                return (
+                  <tr key={`${request.LoanApplicationNo}-${request.ApplicantNo}`}>
+                    <td data-label="Applicant Name">{request.ApplicantName}</td>
+                    <td data-label="Applicant Number">{request.ApplicantNo}</td>
+                    <td data-label="Loan Number">{request.LoanApplicationNo}</td>
+                    <td data-label="Loan Type">{request.LoanTypeDescription}</td>
+                    <td data-label="Repayment Period">{request.LoanRepaymentPeriod}</td>                  
+                    <td data-label="Amount">Ksh {parseFloat(request.LoanRequestedAmount || 0).toLocaleString()}</td>
+                    <td data-label="Status">{getStatusBadge(request.Status)}</td>
+                    <td data-label="Actions" className="action-buttons">
+                      <button
+                        onClick={() => handleActionClick(request.LoanApplicationNo, true)}
+                        disabled={!canAct}
+                        className={`accept-btn ${!canAct ? "disabled" : ""}`}
+                        aria-label={`Approve request from ${request.ApplicantName}`}
+                        title={!canAct ? "This request has already been processed" : "Approve request"}
+                      >
+                        <FaCheck /> <span className="action-text">Approve</span>
+                      </button>
+                      <button
+                        onClick={() => handleActionClick(request.LoanApplicationNo, false)}
+                        disabled={!canAct}
+                        className={`reject-btn ${!canAct ? "disabled" : ""}`}
+                        aria-label={`Reject request from ${request.ApplicantName}`}
+                        title={!canAct ? "This request has already been processed" : "Reject request"}
+                      >
+                        <FaTimes /> <span className="action-text">Reject</span>
+                      </button>
+                    </td>
+                  </tr>
+                );
+              })}
             </tbody>
           </table>
         </div>
@@ -265,6 +315,8 @@ function Guarantorship() {
             <h3>Confirm Action</h3>
             <p>
               Are you sure you want to {currentAction} this guarantorship request?
+              <br />
+              <small>This action cannot be undone.</small>
             </p>
             <div className="dialog-buttons">
               <button
