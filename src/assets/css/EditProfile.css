@@ -27,11 +27,8 @@
   line-height: 1.5;
   color: var(--text);
   background-color: var(--bg);
-  height: auto;
-  
   display: flex;
   flex-direction: column;
-  height: 100vh;
 }
 
 /* Header Styles */
@@ -135,7 +132,6 @@
 .section-content.expanded {
   display: flex;
   flex-direction: column;
-  max-height: 1000px;
   animation: fadeIn 0.3s ease-out;
 }
 
@@ -177,8 +173,6 @@
 }
 /* Container */
 .edit-profile-container {
-  overflow-y: auto;
-  max-height: 100vh;
   padding: 20px;
   background: #f9faf9;
   font-family: 'Space Grotesk', sans-serif;
@@ -684,4 +678,151 @@
 
 .checkbox-text {
   user-select: none;
+}
+.profile-contact-sections {
+  display: grid;
+  gap: 1rem;
+}
+
+.profile-contact-section {
+  padding: 1rem;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+}
+
+.profile-contact-section h2 {
+  margin: 0;
+  font-size: 1.125rem;
+  font-weight: 650;
+  color: var(--primary-dark);
+}
+
+.profile-contact-heading,
+.profile-contact-actions {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+}
+
+.profile-contact-heading .add-kin-btn {
+  width: auto;
+  margin: 0;
+}
+
+.profile-contact-grid,
+.profile-contact-fields {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 15rem), 1fr));
+  gap: 0.75rem;
+  margin: 1rem 0 0;
+  padding: 0;
+}
+
+.profile-contact-grid {
+  grid-template-columns: repeat(auto-fill, minmax(min(100%, 15rem), 1fr));
+  list-style: none;
+}
+
+.profile-contact-fields {
+  min-inline-size: 0;
+  border: 0;
+}
+
+.profile-contact-card {
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  gap: 1rem;
+  padding: 1rem;
+  border: 1px solid var(--border);
+  border-radius: 1.125rem;
+  background: var(--bg);
+  overflow-wrap: anywhere;
+}
+
+.profile-contact-card .profile-contact-edit {
+  align-self: flex-start;
+  margin-top: auto;
+  padding-inline: 1rem;
+  border-radius: 999px;
+}
+
+.profile-contact-card p,
+.profile-contact-empty {
+  margin: 0.25rem 0 0;
+  color: #4a5568;
+  font-size: 0.875rem;
+}
+
+.profile-contact-summary {
+  display: grid;
+  gap: 0.25rem;
+  margin: 0.5rem 0 0;
+  font-size: 0.8125rem;
+}
+
+.profile-contact-summary > div {
+  display: grid;
+  grid-template-columns: 4rem minmax(0, 1fr);
+  gap: 0.25rem;
+}
+
+.profile-contact-summary dt {
+  color: #4a5568;
+  font-weight: 600;
+}
+
+.profile-contact-summary dd {
+  margin: 0;
+}
+
+.profile-contact-email {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.profile-contact-edit,
+.profile-contact-field input,
+.profile-contact-field select {
+  padding: 0.5rem 0.75rem;
+  border: 1px solid #a0aec0;
+  border-radius: var(--radius-sm);
+  background: var(--card-bg);
+}
+
+.profile-contact-edit {
+  color: var(--primary-dark);
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.profile-contact-field {
+  display: grid;
+  gap: 0.25rem;
+  align-content: start;
+}
+
+.profile-contact-field input,
+.profile-contact-field select {
+  width: 100%;
+  min-width: 0;
+}
+
+.profile-contact-field input[readonly] {
+  background: var(--bg);
+}
+
+.profile-contact-checkbox {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.profile-contact-actions {
+  justify-content: flex-end;
+  margin-top: 1rem;
 }

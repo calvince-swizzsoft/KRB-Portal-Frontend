@@ -6,6 +6,13 @@ import OTPModal from "./OTPModal";
 import axios from "axios";
 import { authorizedFetch } from "../js/authorizedFetch";
 
+const asLoanAmount = (value) => Number(String(value ?? "").replaceAll(",", "")) || 0;
+const formatLoanAmount = new Intl.NumberFormat("en-KE", {
+  style: "currency",
+  currency: "KES",
+  minimumFractionDigits: 2,
+}).format;
+
 function LoanDetailsModal({ loan, onClose }) {
   const [activeTab, setActiveTab] = useState("loan");
   const [showAddGuarantor, setShowAddGuarantor] = useState(false);
@@ -13,7 +20,6 @@ function LoanDetailsModal({ loan, onClose }) {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const [activeMembers, setActiveMembers] = useState([]);
-  const [filteredMembers, setFilteredMembers] = useState([]);
   const [searchQuery, setSearchQuery] = useState("");
   const memberNo = sessionStorage.getItem("memberNo");
   const [editableLoan, setEditableLoan] = useState({
@@ -21,11 +27,76 @@ function LoanDetailsModal({ loan, onClose }) {
     installments: 0,
     productType: "",
   });
-  const [guarantorDetails, setGuarantorDetails] = useState({
-    name: "",
-    memberNumber: "",
-  });
+  const [selectedMemberNumber, setSelectedMemberNumber] = useState("");
+  const memberQuery = searchQuery.trim().toLowerCase();
+  const filteredMembers = memberQuery && !selectedMemberNumber
+    ? activeMembers.filter((member) =>
+      member.MemberName?.toLowerCase().includes(memberQuery) ||
+      String(member.MemberNo ?? "").toLowerCase().includes(memberQuery)
+    )
+    : [];
   const [guarantors, setGuarantors] = useState([]);
+  const [eligibleProduct, setEligibleProduct] = useState(null);
+  const [selfAmount, setSelfAmount] = useState("");
+  const [selfLimit, setSelfLimit] = useState(null);
+  const [selfError, setSelfError] = useState("");
+  const [savedSelfAmount, setSavedSelfAmount] = useState(null);
+  const selfGuarantee = guarantors.find((guarantor) => guarantor.selfGuarantee);
+  const allowsSelfGuarantee = Boolean(loan?.productType && eligibleProduct === loan.productType);
+  const committedAmount = selfGuarantee
+    ? asLoanAmount(selfGuarantee.amount)
+    : savedSelfAmount?.loanId === loan?.id ? savedSelfAmount.amount : null;
+  const limit = selfLimit?.loanId === loan?.id ? selfLimit.amount : null;
+  const selectedAmount = Number(selfAmount);
+  const validAmount = /^(?:\d+(?:\.\d{1,2})?|\.\d{1,2})$/.test(selfAmount) &&
+    selectedAmount > 0 && limit !== null && selectedAmount <= limit;
+  const remainingAfterSelf = Math.max(0, asLoanAmount(loan?.amount) - (committedAmount ?? selectedAmount));
+
+  useEffect(() => {
+    if (!loan?.productType) return;
+    const controller = new AbortController();
+    const checkEligibility = async () => {
+      try {
+        const query = new URLSearchParams({ loan_type: loan.productType });
+        const response = await authorizedFetch(`/api/self-guarantee-eligibility/?${query}`, {
+          signal: controller.signal,
+        });
+        if (!response.ok) throw new Error("Could not check self-guarantee eligibility.");
+        const { allowed } = await response.json();
+        if (!controller.signal.aborted) setEligibleProduct(allowed ? loan.productType : null);
+      } catch (error) {
+        if (!controller.signal.aborted) toast.error(error.message);
+      }
+    };
+    checkEligibility();
+    return () => controller.abort();
+  }, [loan?.productType]);
+
+  useEffect(() => {
+    if (activeTab !== "self-guarantee" || !loan?.id || committedAmount !== null) return;
+    const controller = new AbortController();
+    setSelfLimit(null);
+    setSelfError("");
+
+    async function loadLimit() {
+      try {
+        const query = new URLSearchParams({ loan_number: loan.id });
+        const response = await authorizedFetch(`/api/self-guarantee-eligibility/?${query}`, {
+          signal: controller.signal,
+        });
+        const data = await response.json();
+        if (!response.ok) throw new Error(data.error || "Could not load your self-guarantee limit.");
+        const maximum = Number(data.max_amount);
+        if (!Number.isFinite(maximum) || maximum < 0) throw new Error("Self-guarantee limit is unavailable.");
+        if (!controller.signal.aborted) setSelfLimit({ loanId: loan.id, amount: maximum });
+      } catch (error) {
+        if (!controller.signal.aborted) setSelfError(error.message);
+      }
+    }
+
+    loadLimit();
+    return () => controller.abort();
+  }, [activeTab, committedAmount, loan?.id]);
 
   useEffect(() => {
     if (loan) {
@@ -44,17 +115,6 @@ function LoanDetailsModal({ loan, onClose }) {
     }
   }, [showAddGuarantor]);
 
-  useEffect(() => {
-    if (searchQuery) {
-      const filtered = activeMembers.filter((member) =>
-        member.MemberName.toLowerCase().includes(searchQuery.toLowerCase())
-      );
-      setFilteredMembers(filtered);
-    } else {
-      setFilteredMembers([]);
-    }
-  }, [searchQuery, activeMembers]);
-
   const fetchActiveMembers = async () => {
     try {
       const response = await authorizedFetch(
@@ -65,9 +125,11 @@ function LoanDetailsModal({ loan, onClose }) {
       if (!response.ok) throw new Error("Failed to fetch active members");
 
       const data = await response.json();
-      if (data.status === "success" && data.active_members.OnlineGuarantors) {
-        setActiveMembers(data.active_members.OnlineGuarantors);
+      const members = data.active_members?.OnlineGuarantors;
+      if (data.status !== "success" || !Array.isArray(members)) {
+        throw new Error("Failed to fetch active members");
       }
+      setActiveMembers(members);
     } catch (error) {
       toast.error(error.message);
     }
@@ -82,21 +144,14 @@ function LoanDetailsModal({ loan, onClose }) {
   };
 
   const handleGuarantorChange = (e) => {
-    const { name, value } = e.target;
-    setGuarantorDetails((prev) => ({
-      ...prev,
-      [name]: value,
-    }));
+    const { value } = e.target;
+    setSelectedMemberNumber("");
     setSearchQuery(value);
   };
 
   const selectMember = (member) => {
-    setGuarantorDetails({
-      name: member.MemberName,
-      memberNumber: member.MemberNo,
-    });
+    setSelectedMemberNumber(member.MemberNo);
     setSearchQuery(member.MemberName);
-    setFilteredMembers([]);
   };
 
   const fetchGuarantors = async () => {
@@ -118,6 +173,7 @@ function LoanDetailsModal({ loan, onClose }) {
         name: g.GuarantorName,
         memberNumber: g.AccountNo,
         amount: g.AmountGuaranteed,
+        selfGuarantee: g.SelfGuarantee === true,
         status: g.ApprovalStatus,
         email: g.EmailAddress,
         phone: g.Telephone,
@@ -132,45 +188,64 @@ function LoanDetailsModal({ loan, onClose }) {
     }
   };
 
-  const addGuarantor = async () => {
-  if (!guarantorDetails.memberNumber) {
-    toast.error("Please select a member");
-    return;
-  }
-
-  setIsSubmitting(true);
-  try {
-    const payload = {
-      member_number: guarantorDetails.memberNumber,
-      loan_number: loan.id,
-    };
-
-    const response = await authorizedFetch(`/api/request-guarantorship/`, {
-      method: "POST",
-      body: JSON.stringify(payload),
-    });
-
-    const data = await response.json();
-
-    if (!response.ok || data.success === false) {
-      toast.error(data.message || "Failed to send guarantor request");
+  const addGuarantor = async (self = false) => {
+    if (isSubmitting) return;
+    if (self && (!validAmount || committedAmount !== null)) return;
+    const guarantorNumber = self ? memberNo : selectedMemberNumber;
+    if (!guarantorNumber) {
+      toast.error("Please select a member");
       return;
     }
 
-    toast.success(data.message);
+    setIsSubmitting(true);
+    if (self) setSelfError("");
+    try {
+      const payload = {
+        member_number: guarantorNumber,
+        loan_number: loan.id,
+      };
+      if (self) payload.self_guarantee_amount = selfAmount;
 
-    setGuarantorDetails({ name: "", memberNumber: "" });
-    setSearchQuery("");
-    setShowAddGuarantor(false);
-    fetchGuarantors();
-  } catch (error) {
-    toast.error("An unexpected error occurred. Please try again.");
-    console.error(error);
-  } finally {
-    setIsSubmitting(false);
-  }
-};
+      const response = await authorizedFetch(`/api/request-guarantorship/`, {
+        method: "POST",
+        body: JSON.stringify(payload),
+      });
 
+      const data = await response.json();
+
+      const status = String(data.status ?? "").toLowerCase();
+      const isError =
+        !response.ok ||
+        data.success === false ||
+        ["error", "failed", "failure"].includes(status) ||
+        Boolean(data.error) ||
+        (data.success !== true && status !== "success" &&
+          /\b(error|failed|invalid|already)\b/i.test(data.message ?? ""));
+
+      if (isError) {
+        const errorMessage = data.message || data.error || "Failed to send guarantor request";
+        if (self) setSelfError(errorMessage);
+        else toast.error(errorMessage);
+        return;
+      }
+
+      if (self) {
+        setSavedSelfAmount({ loanId: loan.id, amount: selectedAmount });
+        toast.success("Self-guarantee saved.");
+      } else {
+        toast.success(data.message || "Guarantor request sent successfully");
+        setSelectedMemberNumber("");
+        setSearchQuery("");
+        setShowAddGuarantor(false);
+      }
+      fetchGuarantors();
+    } catch (error) {
+      toast.error("An unexpected error occurred. Please try again.");
+      console.error(error);
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
 
   const removeGuarantor = async (memberNumber) => {
     try {
@@ -188,71 +263,90 @@ function LoanDetailsModal({ loan, onClose }) {
         }
       );
 
-      if (!response.ok) {
-        const errorText = await response.text();
-        throw new Error(`Failed to remove guarantor: ${errorText}`);
+      const data = await response.json();
+
+      // Check for error dynamically
+      const responseString = JSON.stringify(data).toLowerCase();
+      const isError = 
+        !response.ok ||
+        responseString.includes('error') ||
+        responseString.includes('failed') ||
+        responseString.includes('invalid');
+
+      if (isError) {
+        const errorMessage = data.message || data.error || "Failed to remove guarantor";
+        toast.error(errorMessage);
+        return;
       }
 
-      toast.success("Guarantor removed successfully");
+      toast.success(data.message || "Guarantor removed successfully");
 
+      if (memberNumber === memberNo) setSavedSelfAmount(null);
       setGuarantors((prev) =>
         prev.filter((g) => g.memberNumber !== memberNumber)
       );
     } catch (error) {
-      toast.error(error.message);
+      toast.error(error.message || "An unexpected error occurred");
     }
   };
 
   const handleSaveChanges = async () => {
-  if (!editableLoan.amount || editableLoan.amount <= 0) {
-    toast.error("Please enter a valid loan amount");
-    return;
-  }
-  if (!editableLoan.installments || editableLoan.installments <= 0) {
-    toast.error("Please enter a valid repayment period");
-    return;
-  }
-
-  setIsSaving(true);
-
-  try {
-    const payload = {
-      loanNumber: loan.id,
-      memberNumber: sessionStorage.getItem("memberNo"),
-      amountRequest: String(editableLoan.amount),
-      loanType: editableLoan.productType,
-      repaymentPeriod: editableLoan.installments,
-    };
-
-    const response = await authorizedFetch(
-      `/api/edit-loan/`,
-      {
-        method: "POST",
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(payload),
-      }
-    );
-    console.log(response)
-
-    // Parse the response data
-    const data = await response.json();
-    console.log(data)
-    
-    if (!response.ok) {
-      throw new Error(data.errors || "Failed to save changes");
-      
+    if (!editableLoan.amount || editableLoan.amount <= 0) {
+      toast.error("Please enter a valid loan amount");
+      return;
+    }
+    if (!editableLoan.installments || editableLoan.installments <= 0) {
+      toast.error("Please enter a valid repayment period");
+      return;
     }
 
-    toast.success(data.message || "Loan details updated successfully!");
-  } catch (error) {
-    toast.error(error.message || "An unexpected error occurred");
-    console.error("Error saving changes:", error);
-  } finally {
-    setIsSaving(false);
-  }
-};
+    setIsSaving(true);
+
+    try {
+      const payload = {
+        loanNumber: loan.id,
+        memberNumber: sessionStorage.getItem("memberNo"),
+        amountRequest: String(editableLoan.amount),
+        loanType: editableLoan.productType,
+        repaymentPeriod: editableLoan.installments,
+      };
+
+      const response = await authorizedFetch(
+        `/api/edit-loan/`,
+        {
+          method: "POST",
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify(payload),
+        }
+      );
+
+      const data = await response.json();
+
+      // Check for error dynamically
+      const responseString = JSON.stringify(data).toLowerCase();
+      const isError = 
+        !response.ok ||
+        responseString.includes('error') ||
+        responseString.includes('failed') ||
+        responseString.includes('invalid');
+
+      if (isError) {
+        const errorMessage = data.message || data.errors || data.error || "Failed to save changes";
+        toast.error(errorMessage);
+        return;
+      }
+
+      toast.success(data.message || "Loan details updated successfully!");
+    } catch (error) {
+      toast.error(error.message || "An unexpected error occurred");
+      console.error("Error saving changes:", error);
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
   const submitLoan = async () => {
     if (!memberNo || !loan?.id) {
       toast.error("Missing member or loan number");
@@ -273,11 +367,39 @@ function LoanDetailsModal({ loan, onClose }) {
 
       const data = await response.json();
 
-      if (!response.ok) {
-        toast.error(data.message || "Failed to submit loan");
+      // Check for error dynamically
+      const responseString = JSON.stringify(data).toLowerCase();
+      const isError = 
+        !response.ok ||
+        data.error ||
+        responseString.includes('error') ||
+        responseString.includes('failed') ||
+        responseString.includes('invalid') ||
+        responseString.includes('already') ||
+        responseString.includes('denied') ||
+        responseString.includes('rejected');
+
+      if (isError) {
+        // Extract the most relevant error message dynamically
+        let errorMessage = "Operation failed";
+        
+        if (data.error) {
+          errorMessage = data.error;
+        } else if (data.data && typeof data.data === 'string') {
+          errorMessage = data.data;
+        } else if (data.message) {
+          errorMessage = data.message;
+        } else if (data.errors) {
+          errorMessage = data.errors;
+        }
+        
+        toast.error(errorMessage);
         return;
       }
-      toast.success(data.message || "Loan submitted successfully");
+
+      // Success case
+      const successMessage = data.message || "Loan submitted successfully";
+      toast.success(successMessage);
 
       setTimeout(() => {
         onClose();
@@ -302,13 +424,13 @@ function LoanDetailsModal({ loan, onClose }) {
         </div>
 
         <div className="loan-modal-tabs">
-          {["loan", "guarantors", "Submit Loan"].map((tab) => (
+          {["loan", ...(allowsSelfGuarantee || committedAmount !== null ? ["self-guarantee"] : []), "guarantors", "Submit Loan"].map((tab) => (
             <button
               key={tab}
               className={`loan-modal-tab ${activeTab === tab ? "active" : ""}`}
               onClick={() => setActiveTab(tab)}
             >
-              {tab === "loan" ? "Loan Details" : tab}
+              {{ loan: "Loan Details", "self-guarantee": "Self-guarantee", guarantors: "Guarantors" }[tab] || tab}
             </button>
           ))}
         </div>
@@ -366,6 +488,70 @@ function LoanDetailsModal({ loan, onClose }) {
             </div>
           )}
 
+          {activeTab === "self-guarantee" && (
+            <section className="self-guarantee-panel" aria-labelledby="self-guarantee-heading">
+              <h3 id="self-guarantee-heading">Use my own deposits</h3>
+              {committedAmount === null ? (
+                <>
+                  <p>You can commit up to 90% of your free deposits, capped at the loan amount.</p>
+                  {limit !== null && (
+                    <p><strong>Maximum you can commit:</strong> {formatLoanAmount(limit)}</p>
+                  )}
+                  {limit === null && !selfError && <p role="status">Checking your available deposits…</p>}
+                  {limit === 0 && <p>You have no free deposits available for this loan.</p>}
+                  {limit > 0 && (
+                    <form className="self-guarantee-form" onSubmit={(event) => {
+                      event.preventDefault();
+                      addGuarantor(true);
+                    }}>
+                      <label htmlFor="self-guarantee-amount">Amount to commit (KES)</label>
+                      <input
+                        id="self-guarantee-amount"
+                        className="guarantor-input"
+                        type="number"
+                        inputMode="decimal"
+                        min="0.01"
+                        max={limit}
+                        step="0.01"
+                        value={selfAmount}
+                        disabled={isSubmitting}
+                        aria-invalid={selectedAmount > limit}
+                        onChange={(event) => {
+                          setSelfAmount(event.target.value);
+                          setSelfError("");
+                        }}
+                      />
+                      {selectedAmount > limit && (
+                        <p className="self-guarantee-error" role="alert">
+                          Enter {formatLoanAmount(limit)} or less. The 90% free-deposit limit applies.
+                        </p>
+                      )}
+                      {validAmount && (
+                        <p>Loan amount left for guarantors: <strong>{formatLoanAmount(remainingAfterSelf)}</strong></p>
+                      )}
+                      <button className="add-guarantor-btn" type="submit" disabled={!validAmount || isSubmitting}>
+                        {isSubmitting ? "Saving…" : "Confirm self-guarantee"}
+                      </button>
+                    </form>
+                  )}
+                  {selfError && <p className="self-guarantee-error" role="alert">{selfError}</p>}
+                </>
+              ) : (
+                <>
+                  <p><strong>Committed from your deposits:</strong> {formatLoanAmount(committedAmount)}</p>
+                  {remainingAfterSelf > 0 ? (
+                    <>
+                      <p>Guarantors need to cover <strong>{formatLoanAmount(remainingAfterSelf)}</strong> of this loan.</p>
+                      <button type="button" className="add-guarantor-btn" onClick={() => setActiveTab("guarantors")}>
+                        Go to Guarantors
+                      </button>
+                    </>
+                  ) : <p>Your deposit commitment covers the full loan amount.</p>}
+                </>
+              )}
+            </section>
+          )}
+
           {activeTab === "guarantors" && (
             <div className="guarantors-section">
               {isLoadingGuarantors ? (
@@ -392,7 +578,7 @@ function LoanDetailsModal({ loan, onClose }) {
                       <tbody>
                         {guarantors.map((g, index) => (
                           <tr key={g.id || index}>
-                            <td data-label="Name">{g.name}</td>
+                            <td data-label="Name">{g.selfGuarantee ? `${g.name} (Self-guarantee)` : g.name}</td>
                             <td data-label="Member No">{g.memberNumber}</td>
                             <td data-label="Amount">Ksh {g.amount}</td>
                             <td data-label="ID Number">
@@ -418,49 +604,51 @@ function LoanDetailsModal({ loan, onClose }) {
                     </table>
                   </div>
 
+                  {selfGuarantee && (() => {
+                    const approvedCover = guarantors.reduce((total, guarantor) => {
+                      if (!["yes", "true", "approved"].includes(String(guarantor.status).toLowerCase())) return total;
+                      return total + asLoanAmount(guarantor.amount);
+                    }, 0);
+                    const remaining = asLoanAmount(loan.amount) - approvedCover;
+                    return remaining > 0 && (
+                      <p>Remaining approved cover needed: {formatLoanAmount(remaining)}</p>
+                    );
+                  })()}
                   <div className="add-guarantor-section">
                     {showAddGuarantor ? (
                       <div className="guarantor-form">
                         <div className="member-search-container">
                           <input
                             type="text"
-                            placeholder="Search member by name"
+                            placeholder="Search by name or member number"
                             name="name"
                             value={searchQuery}
-                            onChange={(e) => {
-                              setSearchQuery(e.target.value);
-                              setGuarantorDetails({
-                                ...guarantorDetails,
-                                name: e.target.value,
-                              });
-                            }}
+                            onChange={handleGuarantorChange}
                             className="guarantor-input"
                           />
                           {filteredMembers.length > 0 && (
                             <div className="member-dropdown">
                               {filteredMembers.map((member) => (
-                                <div
+                                <button
+                                  type="button"
                                   key={member.MemberNo}
                                   className="member-dropdown-item"
                                   onClick={() => selectMember(member)}
                                 >
                                   {member.MemberName} ({member.MemberNo})
-                                </div>
+                                </button>
                               ))}
                             </div>
                           )}
                         </div>
-                        <input
-                          type="hidden"
-                          name="memberNumber"
-                          value={guarantorDetails.memberNumber}
-                        />
+                        {!selectedMemberNumber && (
+                          <p>Select a member from the search results to enable Add Guarantor.</p>
+                        )}
                         <div className="guarantor-actions">
                           <button
-                            onClick={addGuarantor}
-                            disabled={
-                              isSubmitting || !guarantorDetails.memberNumber
-                            }
+                            type="button"
+                            onClick={() => addGuarantor()}
+                            disabled={isSubmitting || !selectedMemberNumber}
                             className={`guarantor-submit-btn ${
                               isSubmitting ? "disabled" : ""
                             }`}
@@ -468,10 +656,11 @@ function LoanDetailsModal({ loan, onClose }) {
                             {isSubmitting ? "Submitting..." : "Add Guarantor"}
                           </button>
                           <button
+                            type="button"
                             onClick={() => {
                               setShowAddGuarantor(false);
                               setSearchQuery("");
-                              setFilteredMembers([]);
+                              setSelectedMemberNumber("");
                             }}
                             className="guarantor-cancel-btn"
                           >
@@ -481,6 +670,7 @@ function LoanDetailsModal({ loan, onClose }) {
                       </div>
                     ) : (
                       <button
+                        type="button"
                         onClick={() => setShowAddGuarantor(true)}
                         className="add-guarantor-btn"
                       >

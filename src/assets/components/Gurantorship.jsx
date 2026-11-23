@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { toast, ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 import KrbsacoLoader from "./KrbsacoLoader";
@@ -9,13 +9,18 @@ import "../css/Gurantorship.css";
 
 function Guarantorship() {
   const [requests, setRequests] = useState([]);
-  const [filteredRequests, setFilteredRequests] = useState([]);
+  const [filteredResults, setFilteredResults] = useState([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState("");
   const [filterStatus, setFilterStatus] = useState("all");
   const [showConfirmDialog, setShowConfirmDialog] = useState(false);
   const [currentAction, setCurrentAction] = useState(null);
   const [currentLoanNo, setCurrentLoanNo] = useState(null);
+  const [isSelfGuarantee, setIsSelfGuarantee] = useState(false);
+  const [pledgedAmount, setPledgedAmount] = useState("");
+  const [isProcessing, setIsProcessing] = useState(false);
+  const processingRequest = useRef(false);
+  const needsAmount = currentAction === "approve" && !isSelfGuarantee;
 
   useEffect(() => {
     fetchGuarantorRequests();
@@ -61,12 +66,12 @@ function Guarantorship() {
       });
     }
     
-    setFilteredRequests(results);
+    setFilteredResults(results);
   };
 
-  const fetchGuarantorRequests = async () => {
+  const fetchGuarantorRequests = async ({ showLoader = true } = {}) => {
     try {
-      setLoading(true);
+      if (showLoader) setLoading(true);
       const memberNo = sessionStorage.getItem("memberNo");
       if (!memberNo) {
         toast.error("Member number not found. Please log in again.");
@@ -97,25 +102,39 @@ function Guarantorship() {
       toast.error(error.message || "Failed to load requests");
       console.error("Fetch error:", error);
     } finally {
-      setLoading(false);
+      if (showLoader) setLoading(false);
     }
   };
 
-  const handleActionClick = (loanNo, isApproved) => {
-    setCurrentLoanNo(loanNo);
+  const handleActionClick = (request, isApproved) => {
+    setCurrentLoanNo(request.LoanApplicationNo);
+    setIsSelfGuarantee(String(request.ApplicantNo).toUpperCase() === sessionStorage.getItem("memberNo")?.toUpperCase());
+    const requestedAmount = Number(String(request.Amount ?? "").replace(/,/g, ""));
+    setPledgedAmount(Number.isFinite(requestedAmount) && requestedAmount > 0
+      ? requestedAmount.toFixed(2)
+      : "");
     setCurrentAction(isApproved ? "approve" : "reject");
     setShowConfirmDialog(true);
   };
 
   const handleConfirmAction = async () => {
-    try {
-      const isApproved = currentAction === "approve";
-      const memberNo = sessionStorage.getItem("memberNo");
-      if (!memberNo) {
-        toast.error("Session expired. Please log in again.");
-        return;
-      }
+    if (processingRequest.current) return;
 
+    const isApproved = currentAction === "approve";
+    const memberNo = sessionStorage.getItem("memberNo");
+    if (!memberNo) {
+      toast.error("Session expired. Please log in again.");
+      return;
+    }
+
+    if (needsAmount && (!/^\d+(\.\d{1,2})?$/.test(pledgedAmount) || Number(pledgedAmount) <= 0)) {
+      toast.error("Enter a positive guarantee amount with up to two decimal places.");
+      return;
+    }
+
+    processingRequest.current = true;
+    setIsProcessing(true);
+    try {
       // 0 = Approve, 1 = Reject (as per SOAP service requirement)
       const response = await authorizedFetch(`/api/approve-guarantorship/`, {
         method: "POST",
@@ -123,7 +142,8 @@ function Guarantorship() {
         body: JSON.stringify({
           memberNo: memberNo,
           loanNo: currentLoanNo,
-          approvedStatus: isApproved ? 0 : 1, // 0 = Approve, 1 = Reject
+          approvedStatus: isApproved ? 0 : 1,
+          ...(needsAmount ? { amount: pledgedAmount } : {}),
         }),
       });
 
@@ -143,7 +163,7 @@ function Guarantorship() {
         );
       }
       
-      await fetchGuarantorRequests();
+      await fetchGuarantorRequests({ showLoader: false });
     } catch (error) {
       toast.error(
         error.message || "An unexpected error occurred"
@@ -151,6 +171,8 @@ function Guarantorship() {
       console.error("Action error:", error);
     } finally {
       setShowConfirmDialog(false);
+      processingRequest.current = false;
+      setIsProcessing(false);
     }
   };
 
@@ -175,6 +197,27 @@ function Guarantorship() {
         {statusInfo.text}
       </span>
     );
+  };
+
+  // Helper function to format amount with proper number parsing
+  const formatAmount = (amount) => {
+    if (!amount) return "0";
+    
+    // Remove any commas and convert to string if needed
+    const cleanAmount = String(amount).replace(/,/g, '');
+    
+    // Parse as float and format with commas
+    const numericAmount = parseFloat(cleanAmount);
+    
+    // Check if it's a valid number
+    if (isNaN(numericAmount)) {
+      return amount; // Return original if not a number
+    }
+    
+    return numericAmount.toLocaleString('en-US', {
+      minimumFractionDigits: 0,
+      maximumFractionDigits: 0
+    });
   };
 
   // Helper function to check if a request can be approved/rejected
@@ -238,7 +281,7 @@ function Guarantorship() {
         </div>
       </div>
 
-      {filteredRequests.length === 0 ? (
+      {filteredResults.length === 0 ? (
         <div className="no-requests">
           <img src="/img/no-requests.svg" alt="No requests" />
           <p>No guarantorship requests found</p>
@@ -264,13 +307,13 @@ function Guarantorship() {
                 <th>Loan Number</th>
                 <th>Loan Type</th>
                 <th>Repayment Period</th>
-                <th>Amount</th>
+                <th>Guarantee Requested</th>
                 <th>Status</th>
                 <th>Actions</th>
               </tr>
             </thead>
             <tbody>
-              {filteredRequests.map((request) => {
+              {filteredResults.map((request) => {
                 const canAct = canPerformAction(request);
                 return (
                   <tr key={`${request.LoanApplicationNo}-${request.ApplicantNo}`}>
@@ -279,11 +322,15 @@ function Guarantorship() {
                     <td data-label="Loan Number">{request.LoanApplicationNo}</td>
                     <td data-label="Loan Type">{request.LoanTypeDescription}</td>
                     <td data-label="Repayment Period">{request.LoanRepaymentPeriod}</td>                  
-                    <td data-label="Amount">Ksh {parseFloat(request.LoanRequestedAmount || 0).toLocaleString()}</td>
+                    <td data-label="Guarantee Requested">
+                      {request.Amount == null || request.Amount === ""
+                        ? "Unavailable"
+                        : `Ksh ${formatAmount(request.Amount)}`}
+                    </td>
                     <td data-label="Status">{getStatusBadge(request.Status)}</td>
                     <td data-label="Actions" className="action-buttons">
                       <button
-                        onClick={() => handleActionClick(request.LoanApplicationNo, true)}
+                        onClick={() => handleActionClick(request, true)}
                         disabled={!canAct}
                         className={`accept-btn ${!canAct ? "disabled" : ""}`}
                         aria-label={`Approve request from ${request.ApplicantName}`}
@@ -292,7 +339,7 @@ function Guarantorship() {
                         <FaCheck /> <span className="action-text">Approve</span>
                       </button>
                       <button
-                        onClick={() => handleActionClick(request.LoanApplicationNo, false)}
+                        onClick={() => handleActionClick(request, false)}
                         disabled={!canAct}
                         className={`reject-btn ${!canAct ? "disabled" : ""}`}
                         aria-label={`Reject request from ${request.ApplicantName}`}
@@ -318,18 +365,33 @@ function Guarantorship() {
               <br />
               <small>This action cannot be undone.</small>
             </p>
+            {needsAmount && (
+              <label>
+                Amount to guarantee (KES)
+                <input type="number" min="0.01" step="0.01" value={pledgedAmount}
+                  disabled={isProcessing}
+                  onChange={(event) => setPledgedAmount(event.target.value)} />
+              </label>
+            )}
             <div className="dialog-buttons">
               <button
                 onClick={() => setShowConfirmDialog(false)}
                 className="cancel-btn"
+                disabled={isProcessing}
               >
                 Cancel
               </button>
               <button
                 onClick={handleConfirmAction}
                 className={`confirm-btn ${currentAction}`}
+                disabled={isProcessing}
               >
-                {currentAction === "approve" ? "Confirm Approve" : "Confirm Reject"}
+                {isProcessing && <span className="spinner-small" aria-hidden="true" />}
+                <span aria-live="polite">
+                  {currentAction === "approve"
+                    ? (isProcessing ? "Approving…" : "Confirm Approve")
+                    : (isProcessing ? "Rejecting…" : "Confirm Reject")}
+                </span>
               </button>
             </div>
           </div>

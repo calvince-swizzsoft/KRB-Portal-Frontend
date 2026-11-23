@@ -4,7 +4,7 @@ import "react-toastify/dist/ReactToastify.css";
 import "../css/OnlineLoanApplication.css";
 import KRBLogo from "../img/KRBLogo.png";
 import KrbsacoLoader from "./KrbsacoLoader";
-import { useNavigate } from "react-router-dom";
+import { useLocation, useNavigate } from "react-router-dom";
 import { authorizedFetch } from "../js/authorizedFetch";
 
 function OnlineLoanApplication() {
@@ -35,7 +35,10 @@ function OnlineLoanApplication() {
   const [showRefinanceModal, setShowRefinanceModal] = useState(false);
   const [refinanceLoading, setRefinanceLoading] = useState(false);
   const [totalArrears, setTotalArrears] = useState(0);
+  const profileReviewDialog = useRef(null);
+  const pendingLoanCode = useRef(null);
   const navigate = useNavigate();
+  const { pathname, state } = useLocation();
   
   // Use ref to track form submission
   const isSubmittingRef = useRef(false);
@@ -199,6 +202,21 @@ function OnlineLoanApplication() {
   }, []);
 
   useEffect(() => {
+    if (loading || !state?.reviewedLoanCode) return;
+
+    const loan = loanProducts.find(
+      (product) => product.loan_code === state.reviewedLoanCode
+    );
+    if (loan) {
+      setSelectedLoan(loan);
+      setIsModalOpen(true);
+    } else {
+      toast.error("The selected loan is unavailable. Please choose a loan again.");
+    }
+    navigate(pathname, { replace: true, state: null });
+  }, [loading, loanProducts, navigate, pathname, state]);
+
+  useEffect(() => {
     let results = loanProducts;
 
     if (searchTerm) {
@@ -278,8 +296,8 @@ function OnlineLoanApplication() {
   };
 
   const handleApplyClick = (loan) => {
-    setSelectedLoan(loan);
-    setIsModalOpen(true);
+    pendingLoanCode.current = loan.loan_code;
+    profileReviewDialog.current.showModal();
   };
 
   const closeModal = () => {
@@ -893,6 +911,40 @@ function OnlineLoanApplication() {
           </div>
         )}
       </div>
+
+      <dialog
+        ref={profileReviewDialog}
+        className="krb-loan-profile-review"
+        aria-labelledby="loan-profile-review-title"
+        aria-describedby="loan-profile-review-description"
+      >
+        <div className="krb-loan-modal-header">
+          <h2 id="loan-profile-review-title">Review your member details</h2>
+        </div>
+        <div className="krb-loan-modal-body">
+          <p id="loan-profile-review-description">
+            Before applying, review your personal details, beneficiaries
+            (nominees), and next of kin. Save any changes before continuing.
+          </p>
+          <form method="dialog" className="krb-loan-profile-review-actions">
+            <button type="submit" className="krb-loan-btn-secondary">
+              Cancel
+            </button>
+            <button
+              type="button"
+              className="krb-loan-btn-primary"
+              onClick={() => {
+                profileReviewDialog.current.close();
+                navigate("/Home/member-profile", {
+                  state: { pendingLoanCode: pendingLoanCode.current },
+                });
+              }}
+            >
+              Review profile
+            </button>
+          </form>
+        </div>
+      </dialog>
 
       {isModalOpen && selectedLoan && (
         <div className="krb-loan-modal-backdrop">

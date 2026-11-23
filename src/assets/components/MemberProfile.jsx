@@ -2,7 +2,7 @@
 import React, { useEffect, useState } from "react";
 import KRBLogo from "../img/KRBLogo.png";
 import KrbsacoLoader from "./KrbsacoLoader";
-import { useNavigate } from "react-router-dom";
+import { Link, useLocation, useNavigate } from "react-router-dom";
 import "../css/MemberProfile.css";
 
 import {
@@ -35,6 +35,7 @@ function MemberProfile() {
 });
 
   const navigate = useNavigate();
+  const pendingLoanCode = useLocation().state?.pendingLoanCode;
 
  const toggleSection = (section) => {
   setActiveSection((prev) =>
@@ -55,7 +56,9 @@ function MemberProfile() {
         sessionStorage.setItem("email", data.Email);
       }
     }
-    navigate("/Home/EditProfile");
+    navigate("/Home/EditProfile", {
+      state: pendingLoanCode ? { pendingLoanCode } : null,
+    });
   };
 
   useEffect(() => {
@@ -79,12 +82,6 @@ function MemberProfile() {
           setNextOfKin(result.next_of_kin || []);
           setDependants(result.dependants || []);
           setNominees(result.nominees || []);
-
-          const totalAllocation = (result.nominees || []).reduce((sum, nom) => {
-            return sum + (parseFloat(nom.Allocation) || 0);
-          }, 0);
-          console.log(totalAllocation)
-          sessionStorage.setItem("totalNomineeAllocation", totalAllocation);
 
           // Store additional user data in sessionStorage for easy access
           if (result.profile?.FullName) {
@@ -172,6 +169,15 @@ function MemberProfile() {
           <button className="krb-edit-btn" onClick={UpdateProfile}>
             <FaPencilAlt /> Edit Profile
           </button>
+          {pendingLoanCode && (
+            <Link
+              className="krb-edit-btn"
+              to="/Home/loan-application"
+              state={{ reviewedLoanCode: pendingLoanCode }}
+            >
+              My details are current. Continue to loan
+            </Link>
+          )}
         </div>
 
         <div className="krb-profile-sections">
@@ -199,7 +205,7 @@ function MemberProfile() {
                 headers: ["Name", "Relationship", "Email", "Telephone"],
                 rows: nextOfKin.map(kin => [
                   kin.Name, kin.Relationship, kin.Email,
-                  `${kin.Allocation}`
+                  kin.Telephone
                 ])
               }}
             />

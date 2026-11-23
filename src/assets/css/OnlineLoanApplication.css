@@ -239,6 +239,30 @@
 }
 
 /* Modal Styles */
+.krb-loan-profile-review {
+  width: min(480px, calc(100% - 2rem));
+  max-height: calc(100% - 2rem);
+  margin: auto;
+  padding: 0;
+  border: 0;
+  border-radius: 10px;
+  color: #2d3748;
+  background: white;
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.2);
+}
+
+.krb-loan-profile-review::backdrop {
+  background: rgba(0, 0, 0, 0.5);
+}
+
+.krb-loan-profile-review-actions {
+  display: flex;
+  justify-content: flex-end;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+  margin-top: 1.25rem;
+}
+
 .krb-loan-modal-backdrop {
   position: fixed;
   top: 0;

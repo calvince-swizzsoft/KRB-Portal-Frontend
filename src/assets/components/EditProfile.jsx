@@ -32,18 +32,192 @@ import KRBLogo from "../img/KRBLogo.png";
 import { toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 import { ToastContainer } from "react-toastify";
+import { Link, useLocation } from "react-router-dom";
 import { authorizedFetch } from "../js/authorizedFetch";
 import "../css/EditProfile.css";
 
+const emptyContact = {
+  name: "",
+  email: "",
+  idNumber: "",
+  phone: "",
+  relationshipType: "",
+  dob: "",
+  address: "",
+  isBeneficiary: false,
+};
+const emptyNominee = { ...emptyContact, allocation: 0, guardian: "", isGuardian: false };
+const kinRelationships = ["Father", "Mother", "Spouse", "Sibling", "Child"];
+const nomineeRelationships = [...kinRelationships, "Brother", "Sister"];
+const maxProfileImageBytes = 5_000_000;
+
+const imagePreview = (base64) => base64 ? `data:image/png;base64,${base64}` : null;
+
+function toDateInput(value = "") {
+  const isoDate = value.match(/^\d{4}-\d{2}-\d{2}(?=$|T| )/)?.[0];
+  if (isoDate) return isoDate;
+
+  const date = value.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})$/);
+  if (!date) return "";
+  const [, month, day, year] = date;
+  return `${year}-${month.padStart(2, "0")}-${day.padStart(2, "0")}`;
+}
+
+const contactFields = [
+  ["name", "Full name", "text"],
+  ["phone", "Phone number", "tel"],
+  ["email", "Email address", "email"],
+  ["idNumber", "ID number", "text"],
+  ["dob", "Date of birth", "date"],
+  ["address", "Address", "text"],
+];
+
+function ContactCards({ title, label, records, onOpen }) {
+  return (
+    <section className="profile-contact-section" aria-label={title}>
+      <div className="profile-contact-heading">
+        <h2>{title}</h2>
+        <button type="button" className="add-kin-btn" onClick={() => onOpen()}>
+          <FaPlus aria-hidden="true" /> Add {label}
+        </button>
+      </div>
+      {records.length === 0 ? (
+        <p className="profile-contact-empty">No saved {title.toLowerCase()}.</p>
+      ) : (
+        <ul className="profile-contact-grid">
+          {records.map((record, index) => (
+            <li className="profile-contact-card" key={index}>
+              <div>
+                <strong>{record.name || "Unnamed record"}</strong>
+                <p>
+                  {record.relationshipType || "Relationship unspecified"}
+                  {record.isGuardian ? <span> · Guardian</span> : (
+                    record.allocation !== undefined && <span> · {record.allocation}% allocation</span>
+                  )}
+                </p>
+                {(record.idNumber || record.phone || record.email || record.guardian) && (
+                  <dl className="profile-contact-summary">
+                    {record.idNumber && <div><dt>ID number</dt><dd>{record.idNumber}</dd></div>}
+                    {record.phone && <div><dt>Phone</dt><dd>{record.phone}</dd></div>}
+                    {record.email && (
+                      <div>
+                        <dt>Email</dt>
+                        <dd className="profile-contact-email" title={record.email}>{record.email}</dd>
+                      </div>
+                    )}
+                    {record.guardian && <div><dt>Guardian</dt><dd>{record.guardian}</dd></div>}
+                  </dl>
+                )}
+              </div>
+              <button
+                type="button"
+                className="profile-contact-edit"
+                aria-label={`Edit ${record.name || label}`}
+                onClick={() => onOpen(index)}
+              >
+                Edit
+              </button>
+            </li>
+          ))}
+        </ul>
+      )}
+    </section>
+  );
+}
+
+function ContactEditor({ editor, pending, onChange, onCancel, onSave }) {
+  const { kind, index, draft } = editor;
+  const isNominee = kind === "nominee";
+  const label = isNominee ? "Nominee" : "Next of Kin";
+  const relationships = isNominee ? nomineeRelationships : kinRelationships;
+
+  return (
+    <section className="profile-contact-section" aria-labelledby="profile-contact-title">
+      <h2 id="profile-contact-title">{index === null ? "Add" : "Edit"} {label}</h2>
+      {draft.incomplete && (
+        <p>Some saved details are unavailable. Re-enter them before saving changes.</p>
+      )}
+      {isNominee && <p>Save a separate Guardian record before adding a beneficiary under 18.</p>}
+      <fieldset className="profile-contact-fields" disabled={pending}>
+        {contactFields.map(([field, caption, type]) => (
+          <label className="profile-contact-field" key={field}>
+            {caption}
+            <input
+              type={type}
+              value={draft[field]}
+              maxLength={field === "idNumber" ? (isNominee ? 40 : 20) : undefined}
+              readOnly={field === "name" && index !== null}
+              onChange={(event) => onChange(field, event.target.value)}
+            />
+            {field === "name" && index !== null && <small>The ERP uses this name to identify the record.</small>}
+          </label>
+        ))}
+        <label className="profile-contact-field">
+          Relationship
+          <select value={draft.relationshipType} onChange={(event) => onChange("relationshipType", event.target.value)}>
+            <option value="">Select relationship</option>
+            {draft.relationshipType && !relationships.includes(draft.relationshipType) && (
+              <option value={draft.relationshipType}>{draft.relationshipType}</option>
+            )}
+            {relationships.map((relationship) => (
+              <option key={relationship} value={relationship}>{relationship}</option>
+            ))}
+          </select>
+        </label>
+        {isNominee && (
+          <>
+            <label className="profile-contact-field">
+              Record type
+              <select value={draft.isGuardian ? "guardian" : "nominee"}
+                onChange={(event) => onChange("isGuardian", event.target.value === "guardian")}>
+                <option value="nominee">Nominee</option>
+                <option value="guardian">Guardian</option>
+              </select>
+            </label>
+            {!draft.isGuardian && (
+              <>
+            <label className="profile-contact-field">
+              Allocation (%)
+              <input type="number" min="1" max="100" step="any" value={draft.allocation}
+                onChange={(event) => onChange("allocation", event.target.value)} />
+            </label>
+            <label className="profile-contact-field">
+              Guardian
+              <input type="text" value={draft.guardian}
+                onChange={(event) => onChange("guardian", event.target.value)} />
+            </label>
+            <label className="profile-contact-checkbox">
+              <input type="checkbox" checked={draft.isBeneficiary}
+                onChange={(event) => onChange("isBeneficiary", event.target.checked)} />
+              Is Beneficiary
+            </label>
+              </>
+            )}
+          </>
+        )}
+      </fieldset>
+      <div className="profile-contact-actions">
+        <button type="button" className="profile-contact-edit" disabled={pending} onClick={onCancel}>Cancel</button>
+        <button type="button" className="submit-btn primary" disabled={pending} onClick={onSave}>
+          {pending ? "Saving…" : `Save ${label}`}
+        </button>
+      </div>
+    </section>
+  );
+}
+
 const EditProfile = () => {
+  const pendingLoanCode = useLocation().state?.pendingLoanCode;
   // State for responsive design
   const [isMobile, setIsMobile] = useState(window.innerWidth < 768);
 
   // Image states
   const [previewImage, setPreviewImage] = useState(null);
+  const [savedProfileImage, setSavedProfileImage] = useState(null);
   const [previewIdFront, setPreviewIdFront] = useState(null);
   const [previewIdBack, setPreviewIdBack] = useState(null);
   const [previewKraPin, setPreviewKraPin] = useState(null);
+  const [savedDocuments, setSavedDocuments] = useState({});
   const [activeTab, setActiveTab] = useState("personal");
 
   // Form sections state
@@ -51,21 +225,14 @@ const EditProfile = () => {
     personalInfo: true,
     idDocument: false,
     kraPin: false,
-    nextOfKin: false,
-    nominee: false,
   });
 
-  // Form data state - Get initial values from sessionStorage
-  const member_full_name = sessionStorage.getItem("fullName") || "";
   const memberNumber = sessionStorage.getItem("memberNo") || "";
-  const totalNomineeAllocation = sessionStorage.getItem("totalNomineeAllocation");
-  const member_phone = sessionStorage.getItem("phoneNumber") || "";
-  const member_email = sessionStorage.getItem("email") || "";
 
   const [formData, setFormData] = useState({
-    fullNames: member_full_name,
-    phoneNumber: member_phone,
-    email: member_email,
+    fullNames: "",
+    phoneNumber: "",
+    email: "",
     iDNumber: "",
     kRAPin: "",
   });
@@ -74,33 +241,79 @@ const EditProfile = () => {
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   // Next of Kin and Nominees state
-  const [nextOfKins, setNextOfKins] = useState([
-    {
-      name: "",
-      email: "",
-      idNumber: "",
-      phone: "",
-      relationshipType: "",
-      dob: "",
-      address: "",
-      isBeneficiary: false,
-    },
-  ]);
+  const [nextOfKins, setNextOfKins] = useState([]);
+  const [nominees, setNominees] = useState([]);
+  const [profileStatus, setProfileStatus] = useState("loading");
+  const [contactEditor, setContactEditor] = useState(null);
+  const [isSavingContact, setIsSavingContact] = useState(false);
 
-  const [nominees, setNominees] = useState([
-    {
-      name: "",
-      email: "",
-      idNumber: "",
-      phone: "",
-      relationshipType: "",
-      dob: "",
-      address: "",
-      allocation: 0,
-      guardian: "",
-      isBeneficiary: false,
-    },
-  ]);
+  useEffect(() => {
+    const controller = new AbortController();
+
+    async function loadProfile() {
+      try {
+        if (!memberNumber) throw new Error("Member number is missing");
+        const response = await authorizedFetch(
+          `/api/member-profile/?member_no=${encodeURIComponent(memberNumber)}`,
+          { signal: controller.signal }
+        );
+        const result = await response.json();
+        if (!response.ok || result.status !== "success" || !result.profile) {
+          throw new Error("Could not load member profile");
+        }
+        if (controller.signal.aborted) return;
+
+        const kin = (result.next_of_kin ?? []).map((record) => ({
+          ...emptyContact,
+          name: record.Name ?? "",
+          email: record.Email ?? "",
+          phone: record.Telephone ?? "",
+          relationshipType: record.Relationship ?? "",
+          idNumber: record.IDNumber ?? "",
+          address: record.Address ?? "",
+          dob: toDateInput(record.DOB ?? ""),
+          isBeneficiary: record.IsBeneficiary === true,
+        }));
+        const savedNominees = (result.nominees ?? []).map((record) => ({
+          ...emptyNominee,
+          name: record.Name ?? "",
+          dob: toDateInput(record.DOB ?? ""),
+          relationshipType: record.Relationship ?? "",
+          email: record.Email ?? "",
+          idNumber: record.IDNumber ?? "",
+          phone: record.Telephone ?? "",
+          address: record.Address ?? "",
+          isBeneficiary: record.IsBeneficiary === true,
+          allocation: parseFloat(record.Allocation) || 0,
+          guardian: record.Guardian ?? "",
+          isGuardian: record.IsGuardian === true,
+          incomplete: !Object.hasOwn(record, "IDNumber"),
+        }));
+        const profile = result.profile;
+        setFormData({
+          fullNames: profile.FullName ?? "",
+          phoneNumber: profile.Phone ?? "",
+          email: profile.Email ?? "",
+          iDNumber: profile.IDNumber ?? "",
+          kRAPin: profile.KRAPin ?? "",
+        });
+        setSavedProfileImage(imagePreview(profile.ImageBase64));
+        setSavedDocuments({
+          idFront: imagePreview(profile.IdFrontBase64),
+          idBack: imagePreview(profile.IdBackBase64),
+          kraPin: imagePreview(profile.KraPinDocumentBase64),
+        });
+        setNextOfKins(kin);
+        setNominees(savedNominees);
+        setProfileStatus("ready");
+      } catch {
+        if (!controller.signal.aborted) setProfileStatus("error");
+      }
+    }
+
+    loadProfile();
+    return () => controller.abort();
+  }, [memberNumber]);
 
   // Refs for file inputs
   const profileInputRef = useRef(null);
@@ -130,6 +343,11 @@ const EditProfile = () => {
   const handleImageUpload = (type, e) => {
     const file = e.target.files[0];
     if (!file) return;
+    if (file.size > maxProfileImageBytes) {
+      e.target.value = "";
+      toast.error("Select an image that is 5 MB or smaller.");
+      return;
+    }
 
     const reader = new FileReader();
     reader.onloadend = () => {
@@ -193,77 +411,23 @@ const EditProfile = () => {
     }
   };
 
-  // Handle Next of Kin changes
-  const handleNextOfKinChange = (index, field, value) => {
-    const updated = [...nextOfKins];
-    updated[index][field] = value;
-    setNextOfKins(updated);
+  const openContactEditor = (kind, index = null) => {
+    const records = kind === "nominee" ? nominees : nextOfKins;
+    const emptyRecord = kind === "nominee" ? emptyNominee : emptyContact;
+    setContactEditor({ kind, index, draft: { ...(index === null ? emptyRecord : records[index]) } });
   };
 
-  // Handle Nominee changes
-  const handleNomineeChange = (index, field, value) => {
-    const updated = [...nominees];
-    updated[index][field] = value;
-    setNominees(updated);
-  };
-  const formatDate = (dateStr) => {
-    const d = new Date(dateStr);
-    const month = (d.getMonth() + 1).toString().padStart(2, "0");
-    const day = d.getDate().toString().padStart(2, "0");
-    const year = d.getFullYear();
-    return `${month}/${day}/${year}`;
-  };
-
-  // Add/Remove Next of Kin
-  const addNextOfKin = () =>
-    setNextOfKins([
-      ...nextOfKins,
-      {
-        name: "",
-        email: "",
-        idNumber: "",
-        phone: "",
-        relationshipType: "",
-        dob: "",
-        address: "",
-        isBeneficiary: false,
-      },
-    ]);
-
-  const removeNextOfKin = (index) => {
-    const updated = [...nextOfKins];
-    updated.splice(index, 1);
-    setNextOfKins(updated);
-  };
-
-  // Add/Remove Nominee
-  const addNominee = () =>
-    setNominees([
-      ...nominees,
-      {
-        name: "",
-        email: "",
-        idNumber: "",
-        phone: "",
-        relationshipType: "",
-        dob: "",
-        address: "",
-        allocation: 0,
-        guardian: "",
-        isBeneficiary: false,
-      },
-    ]);
-
-  const removeNominee = (index) => {
-    const updated = [...nominees];
-    updated.splice(index, 1);
-    setNominees(updated);
+  const changeContact = (field, value) => {
+    setContactEditor((editor) => ({
+      ...editor,
+      draft: { ...editor.draft, [field]: value },
+    }));
   };
 
   // Calculate age from date of birth
   const calculateAge = (dob) => {
     if (!dob) return 0;
-    const birthDate = new Date(dob);
+    const birthDate = new Date(dob + "T00:00:00");
     const today = new Date();
     let age = today.getFullYear() - birthDate.getFullYear();
     const m = today.getMonth() - birthDate.getMonth();
@@ -296,140 +460,106 @@ const EditProfile = () => {
     return Object.keys(newErrors).length === 0;
   };
 
-  const saveNextOfKin = async () => {
-    try {
-      for (const kin of nextOfKins) {
-        // Only save if at least one field is filled
-        const hasData = 
-          kin.name?.trim() ||
-          kin.email?.trim() ||
-          kin.idNumber?.trim() ||
-          kin.phone?.trim() ||
-          kin.relationshipType?.trim() ||
-          kin.dob?.trim() ||
-          kin.address?.trim();
+  const saveContact = async () => {
+    if (!contactEditor || isSavingContact) return;
 
-        if (!hasData) {
-          toast.info("No next of kin data to save");
-          return;
-        }
-
-        const response = await authorizedFetch("/api/update-next-of-kin/", {
-          method: "POST",
-          body: JSON.stringify({
-            memberNumber,
-            nextOfKinName: kin.name,
-            nextOfKinEmail: kin.email,
-            nextOfKinIdNumber: kin.idNumber,
-            nextOfKinTelephone: kin.phone,
-            nextOfKinRelationshipType: kin.relationshipType,
-            nextOfKinDOB: kin.dob,
-            nextOfKinAddress: kin.address,
-            nextOfKinIsBeneficiary: kin.isBeneficiary,
-          }),
-        });
-
-        if (!response.ok) {
-          throw new Error("Failed to save next of kin");
-        }
-      }
-
-      toast.success("Next of Kin saved successfully");
-      setNextOfKins([]);
-    } catch (error) {
-      toast.error("Error saving Next of Kin");
+    const { kind, index, draft } = contactEditor;
+    const isNominee = kind === "nominee";
+    const label = isNominee ? "nominee" : "next of kin";
+    const records = isNominee ? nominees : nextOfKins;
+    const setRecords = isNominee ? setNominees : setNextOfKins;
+    const name = index === null ? draft.name.trim() : draft.name;
+    if (!name.trim() || !draft.relationshipType.trim()) {
+      toast.error("Full name and relationship are required.");
+      return;
     }
-  };
+    if (index === null && records.some((record) => record.name.trim().toLowerCase() === name.toLowerCase())) {
+      toast.error("A record with this name already exists. Open its card to edit it.");
+      return;
+    }
 
-  const saveNominees = async () => {
-    try {
-      const sessionAllocation = parseFloat(
-        sessionStorage.getItem("totalNomineeAllocation") || "0"
-      );
-    
-      const newAllocations = nominees.reduce((sum, nominee) => {
-        const allocation = parseFloat(nominee.allocation) || 0;
-        return sum + allocation;
-      }, 0);
-    
-      const totalAllocation = sessionAllocation + newAllocations;
-    
-      if (totalAllocation > 100) {
-        toast.error(
-          `Total nominee allocation exceeds 100%. Current: ${totalAllocation.toFixed(2)}%`
-        );
+    let allocation;
+    const isGuardian = isNominee && draft.isGuardian;
+    const isBeneficiary = !isGuardian && draft.isBeneficiary;
+    if (isNominee && !isGuardian) {
+      allocation = Number(draft.allocation);
+      if (!Number.isFinite(allocation) || allocation < 1 || allocation > 100) {
+        toast.error("Enter an allocation between 1% and 100%.");
         return;
       }
-    
-      if (totalAllocation < 100 && nominees.length > 0) {
-        const remaining = 100 - totalAllocation;
-        toast.warning(`Nominee allocation remaining: ${remaining.toFixed(2)}%`);
-      }
-    
-      for (const nominee of nominees) {
-        // Only save if at least one field is filled
-        const hasData = 
-          nominee.name?.trim() ||
-          nominee.email?.trim() ||
-          nominee.idNumber?.trim() ||
-          nominee.phone?.trim() ||
-          nominee.relationshipType?.trim() ||
-          nominee.dob?.trim() ||
-          nominee.address?.trim() ||
-          nominee.allocation > 0;
-
-        if (!hasData) {
-          toast.info("No nominee data to save");
-          return;
-        }
-      
-        if (calculateAge(nominee.dob) < 18 && !nominee.guardian?.trim()) {
-          toast.error("Guardian required for nominees under 18");
-          return;
-        }
-      
-        const response = await authorizedFetch("/api/update-nominee/", {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({
-            memberNumber,
-            nomineeName: nominee.name,
-            nomineeEmail: nominee.email,
-            nomineeIdNumber: nominee.idNumber,
-            nomineeTelephone: nominee.phone,
-            nomineeRelationshipType: nominee.relationshipType,
-            nomineeDOB: formatDate(nominee.dob),
-            nomineeAddress: nominee.address,
-            nomineeAllocation: parseFloat(nominee.allocation),
-            nomineeGuardian: nominee.guardian,
-            nomineeIsBeneficiary: nominee.isBeneficiary,
-          }),
-        });
-      
-        if (!response.ok) {
-          toast.error("Failed to save nominee");
-          return;
-        }
-      }
-
-      sessionStorage.setItem(
-        "totalNomineeAllocation",
-        totalAllocation.toString()
+      const otherAllocation = nominees.reduce(
+        (total, { allocation }, row) => row === index ? total : total + allocation,
+        0
       );
+      if (Math.round((otherAllocation + allocation) * 1e10) / 1e10 > 100) {
+        toast.error("Total nominee allocation cannot exceed 100%.");
+        return;
+      }
+      if (isBeneficiary && (!draft.dob || new Date(draft.dob + "T00:00:00") > new Date())) {
+        toast.error("Enter a valid date of birth for the beneficiary.");
+        return;
+      }
+      if (isBeneficiary && calculateAge(draft.dob) < 18 &&
+          !nominees.some((nominee, row) => row !== index && nominee.isGuardian)) {
+        toast.error("Add a separate Guardian record before saving a beneficiary under 18.");
+        return;
+      }
+    }
 
-      toast.success("Nominees saved successfully");
-      setNominees([]);
-    } catch (error) {
-      toast.error("Error saving nominees");
+    const prefix = isNominee ? "nominee" : "nextOfKin";
+    const body = {
+      memberNumber,
+      [prefix + "Name"]: name,
+      [prefix + "Email"]: draft.email,
+      [prefix + "IdNumber"]: draft.idNumber,
+      [prefix + "Telephone"]: draft.phone,
+      [prefix + "RelationshipType"]: draft.relationshipType,
+      [prefix + "DOB"]: draft.dob,
+      [prefix + "Address"]: draft.address,
+      [prefix + "IsBeneficiary"]: isBeneficiary,
+    };
+    if (isNominee) {
+      body.nomineeAllocation = isGuardian ? 0 : allocation;
+      body.nomineeGuardian = isGuardian ? "" : draft.guardian;
+      body.nomineeIsGuardian = isGuardian;
+    }
+
+    setIsSavingContact(true);
+    try {
+      const response = await authorizedFetch(
+        isNominee ? "/api/update-nominee/" : "/api/update-next-of-kin/",
+        { method: "POST", body: JSON.stringify(body) }
+      );
+      if (!response.ok) {
+        const result = await response.json().catch(() => null);
+        if (result?.code === "next_of_kin_unconfirmed" || result?.code === "next_of_kin_validation" ||
+            result?.code === "nominee_service_outdated" ||
+            (isNominee && response.status === 400 && result?.message)) {
+          toast.error(result.error || result.message);
+          return;
+        }
+        throw new Error("Could not save " + label + ".");
+      }
+
+      const record = { ...draft, name, isBeneficiary };
+      if (isNominee) record.allocation = body.nomineeAllocation;
+      setRecords((current) => index === null
+        ? [...current, record]
+        : current.map((item, row) => row === index ? record : item)
+      );
+      setContactEditor(null);
+      toast.success(isNominee ? "Nominee saved." : "Next of kin saved.");
+    } catch {
+      toast.error("Could not save " + label + ". Your changes are still open.");
+    } finally {
+      setIsSavingContact(false);
     }
   };
 
   // Handle form submission
   const handleSubmit = async (e) => {
     e.preventDefault();
-    if (!validateForm()) return;
+    if (activeTab !== "personal" || profileStatus !== "ready" || !validateForm()) return;
 
     setIsSubmitting(true);
 
@@ -474,9 +604,23 @@ const EditProfile = () => {
       });
 
       if (response.ok) {
+        if (previewImage) setSavedProfileImage(previewImage);
+        setPreviewImage((current) => current === previewImage ? null : current);
+        setSavedDocuments((documents) => ({
+          idFront: previewIdFront || documents.idFront,
+          idBack: previewIdBack || documents.idBack,
+          kraPin: previewKraPin || documents.kraPin,
+        }));
+        setPreviewIdFront((current) => current === previewIdFront ? null : current);
+        setPreviewIdBack((current) => current === previewIdBack ? null : current);
+        setPreviewKraPin((current) => current === previewKraPin ? null : current);
         toast.success("Profile updated successfully");
       } else {
-        toast.error("Failed to update profile");
+        if (response.status === 413) {
+          toast.error("Each profile or document image must be 5 MB or smaller.");
+        } else {
+          toast.error("Failed to update profile");
+        }
       }
     } catch (error) {
       toast.error("An error occurred while updating profile");
@@ -504,22 +648,30 @@ const EditProfile = () => {
         {/* tabs section */}
         <div className="edit-tabs">
           <button
+            type="button"
             className={activeTab === "personal" ? "tab active" : "tab"}
             onClick={() => setActiveTab("personal")}
           >
             Personal Info
           </button>
           <button
+            type="button"
             className={activeTab === "beneficiaries" ? "tab active" : "tab"}
             onClick={() => setActiveTab("beneficiaries")}
           >
-            Beneficiaries & Next of Kin
+            Next of Kin and Nominees
           </button>
         </div>
 
+        {profileStatus === "loading" && <p role="status">Loading your profile…</p>}
+        {profileStatus === "error" && (
+          <p role="alert">Could not load your profile. Reload the page to try again.</p>
+        )}
+
         {/* Personal tab */}
-        {activeTab === "personal" && (
+        {activeTab === "personal" && profileStatus === "ready" && (
           <div className="personal-tab">
+            <p>Maximum upload size is 5 MB per image.</p>
             {/* Profile Section */}
             <section className="personal-tab-profile-card">
               <div className="personal-tab-avatar-upload">
@@ -527,9 +679,9 @@ const EditProfile = () => {
                   className="personal-tab-avatar-preview"
                   onClick={() => profileInputRef.current.click()}
                 >
-                  {previewImage ? (
+                  {previewImage || savedProfileImage ? (
                     <img
-                      src={previewImage}
+                      src={previewImage || savedProfileImage}
                       alt="Profile"
                       className="personal-tab-avatar-image"
                     />
@@ -714,24 +866,26 @@ const EditProfile = () => {
                           className="personal-tab-document-preview"
                           onClick={() => idFrontInputRef.current.click()}
                         >
-                          {previewIdFront ? (
+                          {(previewIdFront || savedDocuments.idFront) ? (
                             <>
-                              <img src={previewIdFront} alt="ID Front" />
-                              <button
-                                type="button"
-                                className="personal-tab-remove-doc-btn"
-                                onClick={(e) => {
-                                  e.stopPropagation();
-                                  handleRemoveImage("idFront");
-                                }}
-                              >
-                                <TrashIcon />
-                              </button>
+                              <img src={previewIdFront || savedDocuments.idFront} alt="ID Front" />
+                              {previewIdFront && (
+                                <button
+                                  type="button"
+                                  className="personal-tab-remove-doc-btn"
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    handleRemoveImage("idFront");
+                                  }}
+                                >
+                                  <TrashIcon />
+                                </button>
+                              )}
                             </>
                           ) : (
                             <div className="personal-tab-document-placeholder">
                               <IdCardIcon className="personal-tab-doc-icon" />
-                              <p>Upload front side</p>
+                              <p>Select a file to upload the front of your ID.</p>
                             </div>
                           )}
                           <button
@@ -760,24 +914,26 @@ const EditProfile = () => {
                           className="personal-tab-document-preview"
                           onClick={() => idBackInputRef.current.click()}
                         >
-                          {previewIdBack ? (
+                          {(previewIdBack || savedDocuments.idBack) ? (
                             <>
-                              <img src={previewIdBack} alt="ID Back" />
-                              <button
-                                type="button"
-                                className="personal-tab-remove-doc-btn"
-                                onClick={(e) => {
-                                  e.stopPropagation();
-                                  handleRemoveImage("idBack");
-                                }}
-                              >
-                                <TrashIcon />
-                              </button>
+                              <img src={previewIdBack || savedDocuments.idBack} alt="ID Back" />
+                              {previewIdBack && (
+                                <button
+                                  type="button"
+                                  className="personal-tab-remove-doc-btn"
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    handleRemoveImage("idBack");
+                                  }}
+                                >
+                                  <TrashIcon />
+                                </button>
+                              )}
                             </>
                           ) : (
                             <div className="personal-tab-document-placeholder">
                               <IdCardIcon className="personal-tab-doc-icon" />
-                              <p>Upload back side</p>
+                              <p>Select a file to upload the back of your ID.</p>
                             </div>
                           )}
                           <button
@@ -849,24 +1005,26 @@ const EditProfile = () => {
                         className="personal-tab-document-preview"
                         onClick={() => kraPinInputRef.current.click()}
                       >
-                        {previewKraPin ? (
+                        {(previewKraPin || savedDocuments.kraPin) ? (
                           <>
-                            <img src={previewKraPin} alt="KRA PIN" />
-                            <button
-                              type="button"
-                              className="personal-tab-remove-doc-btn"
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                handleRemoveImage("kraPin");
-                              }}
-                            >
-                              <TrashIcon />
-                            </button>
+                            <img src={previewKraPin || savedDocuments.kraPin} alt="KRA PIN" />
+                            {previewKraPin && (
+                              <button
+                                type="button"
+                                className="personal-tab-remove-doc-btn"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  handleRemoveImage("kraPin");
+                                }}
+                              >
+                                <TrashIcon />
+                              </button>
+                            )}
                           </>
                         ) : (
                           <div className="personal-tab-document-placeholder">
                             <DocumentTextIcon className="personal-tab-doc-icon" />
-                            <p>Upload KRA PIN document</p>
+                            <p>Select a file to upload your KRA PIN document.</p>
                           </div>
                         )}
                         <button
@@ -895,399 +1053,55 @@ const EditProfile = () => {
           </div>
         )}
 
-        {/* Beneficiariers and Next Of Kin */}
-        {activeTab === "beneficiaries" && (
-          <>
-            {/* Next of Kin Section */}
-            <div className="form-section">
-              <div
-                className="section-header"
-                onClick={() => toggleSection("nextOfKin")}
-              >
-                <h2>Next of Kin</h2>
-                {expandedSections.nextOfKin ? <FaMinus /> : <FaPlus />}
-              </div>
-
-              {expandedSections.nextOfKin && (
-                <div className="section-content expanded">
-                  <form onSubmit={saveNextOfKin}>
-                    {nextOfKins.map((kin, index) => (
-                      <div key={index} className="kin-entry">
-                        <div className="form-group">
-                          <label>Full Name</label>
-                          <input
-                            type="text"
-                            value={kin.name}
-                            onChange={(e) =>
-                              handleNextOfKinChange(
-                                index,
-                                "name",
-                                e.target.value
-                              )
-                            }
-                          />
-                        </div>
-
-                        <div className="form-group">
-                          <label>Email</label>
-                          <input
-                            type="email"
-                            value={kin.email}
-                            onChange={(e) =>
-                              handleNextOfKinChange(
-                                index,
-                                "email",
-                                e.target.value
-                              )
-                            }
-                          />
-                        </div>
-
-                        <div className="form-group">
-                          <label>ID Number</label>
-                          <input
-                            type="text"
-                            value={kin.idNumber}
-                            onChange={(e) =>
-                              handleNextOfKinChange(
-                                index,
-                                "idNumber",
-                                e.target.value
-                              )
-                            }
-                          />
-                        </div>
-
-                        <div className="form-group">
-                          <label>Phone</label>
-                          <input
-                            type="tel"
-                            value={kin.phone}
-                            onChange={(e) =>
-                              handleNextOfKinChange(
-                                index,
-                                "phone",
-                                e.target.value
-                              )
-                            }
-                          />
-                        </div>
-
-                        <div className="form-group">
-                          <label>Relationship</label>
-                          <select
-                            value={kin.relationshipType}
-                            onChange={(e) =>
-                              handleNextOfKinChange(
-                                index,
-                                "relationshipType",
-                                e.target.value
-                              )
-                            }
-                          >
-                            <option value="">Select Relationship</option>
-                            <option value="Father">Father</option>
-                            <option value="Mother">Mother</option>
-                            <option value="Spouse">Spouse</option>
-                            <option value="Sibling">Sibling</option>
-                            <option value="Child">Child</option>
-                          </select>
-                        </div>
-
-                        <div className="form-group">
-                          <label>Date of Birth</label>
-                          <input
-                            type="date"
-                            value={kin.dob}
-                            onChange={(e) =>
-                              handleNextOfKinChange(
-                                index,
-                                "dob",
-                                e.target.value
-                              )
-                            }
-                          />
-                        </div>
-
-                        <div className="form-group">
-                          <label>Address</label>
-                          <input
-                            type="text"
-                            value={kin.address}
-                            onChange={(e) =>
-                              handleNextOfKinChange(
-                                index,
-                                "address",
-                                e.target.value
-                              )
-                            }
-                          />
-                        </div>
-
-                        <div className="form-group checkbox-group">
-                          <label className="checkbox-label">
-                            <input
-                              type="checkbox"
-                              checked={kin.isBeneficiary}
-                              onChange={(e) =>
-                                handleNextOfKinChange(
-                                  index,
-                                  "isBeneficiary",
-                                  e.target.checked
-                                )
-                              }
-                            />
-                            <span className="checkbox-text">
-                              Is Beneficiary
-                            </span>
-                          </label>
-                        </div>
-
-                        <button
-                          type="button"
-                          className="remove-kin-btn"
-                          onClick={() => removeNextOfKin(index)}
-                        >
-                          <FaTimes /> Remove
-                        </button>
-                      </div>
-                    ))}
-
-                    <div className="form-actions">
-                      <button
-                        type="button"
-                        className="submit-btn secondary"
-                        onClick={saveNextOfKin}
-                      >
-                        Save Next of Kin
-                      </button>
-                    </div>
-                  </form>
-
-                  <button
-                    type="button"
-                    className="add-kin-btn"
-                    onClick={addNextOfKin}
-                  >
-                    <FaPlus /> Add Next of Kin
-                  </button>
-                </div>
-              )}
+        {activeTab === "beneficiaries" && profileStatus === "ready" && (
+          contactEditor ? (
+            <ContactEditor
+              editor={contactEditor}
+              pending={isSavingContact}
+              onChange={changeContact}
+              onCancel={() => setContactEditor(null)}
+              onSave={saveContact}
+            />
+          ) : (
+            <div className="profile-contact-sections">
+              <ContactCards title="Next of Kin" label="Next of Kin" records={nextOfKins}
+                onOpen={(index) => openContactEditor("kin", index)} />
+              <ContactCards title="Nominees" label="Nominee" records={nominees}
+                onOpen={(index) => openContactEditor("nominee", index)} />
             </div>
-
-            {/* Nominees Section */}
-            <div className="form-section">
-              <div
-                className="section-header"
-                onClick={() => toggleSection("nominee")}
-              >
-                <h2>Nominees</h2>
-                {expandedSections.nominee ? <FaMinus /> : <FaPlus />}
-              </div>
-
-              {expandedSections.nominee && (
-                <div className="section-content expanded">
-                  {nominees.map((nominee, index) => (
-                    <div key={index} className="kin-entry">
-                      <div className="form-group">
-                        <label>Full Name</label>
-                        <input
-                          type="text"
-                          value={nominee.name}
-                          onChange={(e) =>
-                            handleNomineeChange(index, "name", e.target.value)
-                          }
-                        />
-                      </div>
-
-                      <div className="form-group">
-                        <label>Email</label>
-                        <input
-                          type="email"
-                          value={nominee.email}
-                          onChange={(e) =>
-                            handleNomineeChange(index, "email", e.target.value)
-                          }
-                        />
-                      </div>
-
-                      <div className="form-group">
-                        <label>ID Number</label>
-                        <input
-                          type="text"
-                          value={nominee.idNumber}
-                          onChange={(e) =>
-                            handleNomineeChange(
-                              index,
-                              "idNumber",
-                              e.target.value
-                            )
-                          }
-                        />
-                      </div>
-
-                      <div className="form-group">
-                        <label>Phone</label>
-                        <input
-                          type="tel"
-                          value={nominee.phone}
-                          onChange={(e) =>
-                            handleNomineeChange(index, "phone", e.target.value)
-                          }
-                        />
-                      </div>
-
-                      <div className="form-group">
-                        <label>Relationship</label>
-                        <select
-                          value={nominee.relationshipType}
-                          onChange={(e) =>
-                            handleNomineeChange(
-                              index,
-                              "relationshipType",
-                              e.target.value
-                            )
-                          }
-                        >
-                          <option value="">Select Relationship</option>
-                          <option value="Father">Father</option>
-                          <option value="Mother">Mother</option>
-                          <option value="Spouse">Spouse</option>
-                          <option value="Sibling">Sibling</option>
-                          <option value="Child">Child</option>
-                          <option value="Brother">Brother</option>
-                          <option value="Sister">Sister</option>
-                        </select>
-                      </div>
-
-                      <div className="form-group">
-                        <label>Date of Birth</label>
-                        <input
-                          type="date"
-                          value={nominee.dob}
-                          onChange={(e) =>
-                            handleNomineeChange(index, "dob", e.target.value)
-                          }
-                        />
-                      </div>
-
-                      <div className="form-group">
-                        <label>Address</label>
-                        <input
-                          type="text"
-                          value={nominee.address}
-                          onChange={(e) =>
-                            handleNomineeChange(
-                              index,
-                              "address",
-                              e.target.value
-                            )
-                          }
-                        />
-                      </div>
-
-                      <div className="form-group">
-                        <label>Allocation (%)</label>
-                        <input
-                          type="number"
-                          min="0"
-                          max="100"
-                          step="0.1"
-                          value={nominee.allocation}
-                          onChange={(e) =>
-                            handleNomineeChange(
-                              index,
-                              "allocation",
-                              e.target.value
-                            )
-                          }
-                        />
-                      </div>
-
-                      {calculateAge(nominee.dob) < 18 && (
-                        <div className="form-group">
-                          <label>Guardian Name</label>
-                          <input
-                            type="text"
-                            value={nominee.guardian}
-                            onChange={(e) =>
-                              handleNomineeChange(
-                                index,
-                                "guardian",
-                                e.target.value
-                              )
-                            }
-                          />
-                        </div>
-                      )}
-
-                      <div className="form-group checkbox-group">
-                        <label className="checkbox-label">
-                          <input
-                            type="checkbox"
-                            checked={nominee.isBeneficiary}
-                            onChange={(e) =>
-                              handleNomineeChange(
-                                index,
-                                "isBeneficiary",
-                                e.target.checked
-                              )
-                            }
-                          />
-                          <span className="checkbox-text">Is Beneficiary</span>
-                        </label>
-                      </div>
-
-                      <button
-                        type="button"
-                        className="remove-kin-btn"
-                        onClick={() => removeNominee(index)}
-                      >
-                        <FaTimes /> Remove
-                      </button>
-                    </div>
-                  ))}
-
-                  <div className="form-actions">
-                    <button
-                      type="button"
-                      className="submit-btn secondary"
-                      onClick={saveNominees}
-                    >
-                      Save Nominees
-                    </button>
-                  </div>
-
-                  <button
-                    type="button"
-                    className="add-kin-btn"
-                    onClick={addNominee}
-                  >
-                    <FaPlus /> Add Nominee
-                  </button>
-                </div>
-              )}
-            </div>
-          </>
+          )
         )}
 
         {/* Form Submission */}
-        <div className="form-actions main-actions">
-          <button
-            type="submit"
-            className="submit-btn primary"
-            disabled={isSubmitting}
-          >
-            {isSubmitting ? (
-              <>
-                <span className="spinner"></span> Saving...
-              </>
-            ) : (
-              "Save All Changes"
-            )}
-          </button>
-        </div>
+        {activeTab === "personal" && profileStatus === "ready" && (
+          <div className="form-actions main-actions">
+            <button
+              type="submit"
+              className="submit-btn primary"
+              disabled={isSubmitting}
+            >
+              {isSubmitting ? (
+                <>
+                  <span className="spinner"></span> Saving...
+                </>
+              ) : (
+                "Save Personal Details"
+              )}
+            </button>
+          </div>
+        )}
       </form>
+      {pendingLoanCode && (
+        <div className="form-actions">
+          <Link
+            className="submit-btn secondary"
+            to="/Home/loan-application"
+            state={{ reviewedLoanCode: pendingLoanCode }}
+          >
+            My details are current. Continue to loan
+          </Link>
+        </div>
+      )}
     </div>
   );
 };

@@ -642,8 +642,47 @@
   cursor: pointer;
 }
 
-.add-guarantor-btn:hover {
+.add-guarantor-btn:not(:disabled):hover {
   background-color: #dc2626;
+}
+
+.add-guarantor-btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.self-guarantee-panel {
+  max-width: 36rem;
+  padding: 1rem;
+  border: 1px solid #e5e7eb;
+  border-radius: 0.75rem;
+  background-color: #f8f9fa;
+}
+
+.self-guarantee-panel h3 {
+  margin: 0 0 0.75rem;
+}
+
+.self-guarantee-panel p {
+  margin: 0 0 0.75rem;
+}
+
+.self-guarantee-form {
+  display: grid;
+  gap: 0.5rem;
+  justify-items: start;
+}
+
+.self-guarantee-form .guarantor-input {
+  width: min(100%, 16rem);
+}
+
+.self-guarantee-error {
+  color: #b91c1c;
+}
+
+.self-guarantee-panel > .self-guarantee-error {
+  margin-top: 0.75rem;
 }
 
 /* Submit Loan Container */
@@ -753,7 +792,12 @@
 }
 
 .member-dropdown-item {
+  display: block;
+  width: 100%;
   padding: 8px 12px;
+  border: 0;
+  background: white;
+  text-align: left;
   cursor: pointer;
 }
 
