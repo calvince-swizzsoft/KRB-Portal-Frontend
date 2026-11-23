@@ -396,10 +396,10 @@ function LoanDetailsModal({ loan, onClose }) {
                             <td data-label="Member No">{g.memberNumber}</td>
                             <td data-label="Amount">Ksh {g.amount}</td>
                             <td data-label="ID Number">
-                              {g.IdNumber || "Null"}
+                              {g.idNumber || "—"}
                             </td>
                             <td data-label="Phone">{g.phone}</td>
-                            <td data-label="Email">{g.email || "Null"}</td>
+                            <td data-label="Email">{g.email || "—"}</td>
                             <td data-label="Status">
                               <span data-status={g.status}>{g.status}</span>
                             </td>
