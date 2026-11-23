@@ -74,6 +74,10 @@ function OnlineLoanApplication() {
     
     const message = errorMessage.toString().toLowerCase();
     
+    if (message.startsWith("failed: your loan") && message.includes("you are blocked from applying for instant loans")) {
+      return errorMessage.replace(/^failed:\s*/i, '');
+    }
+
     if (message.includes("arrears")) {
       const arrearsMatch = errorMessage.match(/([\d,]+\.?\d*) in arrears/i);
       const loanMatch = errorMessage.match(/([A-Z\s]+LOAN\s*\d*)/i);
